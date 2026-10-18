@@ -107,3 +107,19 @@ export function InlineNotice({ children, tone = 'info' }: { children: React.Reac
 export function BackLink({ to, children }: { to: string; children: React.ReactNode }) {
   return <Link to={to} className="back-link">← {children}</Link>;
 }
+
+export function ScoreRing({ score, size = 44 }: { score: number; size?: number }) {
+  const radius = (size - 8) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (Math.min(100, Math.max(0, score)) / 100) * circumference;
+  const tone = score >= 70 ? 'good' : score >= 40 ? 'ok' : 'low';
+  return (
+    <span className={`score-ring score-${tone}`} style={{ width: size, height: size }} role="img" aria-label={`CV completeness ${score} percent`}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
+        <circle cx={size / 2} cy={size / 2} r={radius} className="score-track" />
+        <circle cx={size / 2} cy={size / 2} r={radius} className="score-fill" strokeDasharray={circumference} strokeDashoffset={offset} />
+      </svg>
+      <strong>{score}</strong>
+    </span>
+  );
+}
