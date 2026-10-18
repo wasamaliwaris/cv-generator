@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Briefcase, Check, GraduationCap, Plus, Sparkles, Trash2, UserRound, Wrench, Zap } from 'lucide-react';
 import type { MonthDate } from './model';
 import { emptyProfile, isValidEmail, newDocument, uid } from './model';
@@ -75,6 +75,17 @@ export function ExpressPage() {
     if (!skillsText.trim()) setSkillsText(selected.skills.join(', '));
   };
 
+  const [searchParams] = useSearchParams();
+  const kitApplied = useRef(false);
+  useEffect(() => {
+    if (kitApplied.current) return;
+    const requested = searchParams.get('kit');
+    if (requested && kitById(requested)) {
+      kitApplied.current = true;
+      applyKit(requested);
+    }
+  });
+
   const patchJob = (id: string, patch: Partial<QuickJob>) =>
     setJobs((rows) => rows.map((row) => (row.id === id ? { ...row, ...patch } : row)));
   const patchEdu = (id: string, patch: Partial<QuickEdu>) =>
@@ -143,6 +154,16 @@ export function ExpressPage() {
         </div>
       </div>
 
+      <ol className="express-steps" aria-label="Express progress">
+        {[
+          { label: 'Start', done: Boolean(kitId) },
+          { label: 'Contact', done: Boolean((firstName.trim() || lastName.trim()) && email.trim()) },
+          { label: 'Summary', done: summary.trim().length >= 40 },
+          { label: 'Roles', done: jobs.some((j) => j.title.trim() && j.employer.trim()) },
+          { label: 'Education', done: edu.some((e) => e.qualification.trim()) },
+          { label: 'Skills', done: splitList(skillsText).length >= 3 },
+        ].map((step, i) => <li key={step.label} className={step.done ? 'done' : ''}><span className="express-step-dot">{step.done ? <Check size={12} /> : i + 1}</span><span className="express-step-label">{step.label}</span></li>)}
+      </ol>
       {error && <div className="express-error"><InlineNotice tone="error">{error}</InlineNotice></div>}
 
       <section className="express-card" aria-label="Choose a starting point">

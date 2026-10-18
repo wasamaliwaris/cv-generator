@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { AlertCircle, ArrowRight, Check, CheckCircle2, ChevronDown, Info, Menu, TriangleAlert, X } from 'lucide-react';
 import { message } from './strings';
@@ -9,9 +9,16 @@ export function Button({ children, className = '', variant = 'primary', ...props
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
   const close = () => setOpen(false);
   return (
-    <header className="site-header">
+    <header className={`site-header ${scrolled ? 'scrolled' : ''}`}>
       <div className="site-header-inner page-width">
         <Link to="/" className="brand" aria-label="PathCV home" onClick={close}>
           <span className="brand-mark" aria-hidden="true">P</span><span>Path<span className="brand-light">CV</span></span>
@@ -37,15 +44,16 @@ export function Footer() {
       <div className="page-width footer-inner">
         <div className="footer-brand">
           <Link to="/" className="brand"><span className="brand-mark" aria-hidden="true">P</span><span>Path<span className="brand-light">CV</span></span></Link>
-          <p>Make your next step your own.</p>
+          <p>Make your next step your own. Free forever — your data never leaves this device.</p>
+          <div className="footer-badges"><span className="footer-badge">No signup</span><span className="footer-badge">No watermark</span><span className="footer-badge">Free PDF</span></div>
         </div>
-        <div className="footer-links" aria-label="Footer navigation">
-          <Link to="/templates">{message('nav').templates}</Link><Link to="/help">{message('nav').help}</Link><Link to="/privacy">{message('footer').privacy}</Link>
-          <Link to="/profile">{message('footer').profile}</Link><Link to="/my-cvs">{message('footer').savedCvs}</Link><Link to="/cover-letter">{message('footer').coverLetter}</Link>
-          <Link to="/help#contact">Contact <span className="coming-tag">coming later</span></Link>
-        </div>
-        <div className="footer-note">Free to build. Yours to keep.</div>
+        <nav className="footer-grid" aria-label="Footer navigation">
+          <div className="footer-col"><strong>Build</strong><Link to="/builder">CV builder</Link><Link to="/express">Express mode</Link><Link to="/templates">{message('nav').templates}</Link><Link to="/cover-letter">{message('footer').coverLetter}</Link></div>
+          <div className="footer-col"><strong>Workspace</strong><Link to="/my-cvs">{message('footer').savedCvs}</Link><Link to="/profile">{message('footer').profile}</Link><Link to="/help">Export &amp; backup</Link></div>
+          <div className="footer-col"><strong>Resources</strong><Link to="/#how-it-works">{message('nav').howItWorks}</Link><Link to="/help">{message('nav').help}</Link><Link to="/privacy">{message('footer').privacy}</Link><Link to="/help#contact">Contact <span className="coming-tag">coming later</span></Link></div>
+        </nav>
       </div>
+      <div className="page-width footer-bottom"><span>© {new Date().getFullYear()} PathCV</span><span className="footer-note">Free to build. Yours to keep.</span></div>
     </footer>
   );
 }
