@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { ArrowRight, Check, ChevronDown, Menu, X } from 'lucide-react';
+import { AlertCircle, ArrowRight, Check, CheckCircle2, ChevronDown, Info, Menu, TriangleAlert, X } from 'lucide-react';
 import { message } from './strings';
 
 export function Button({ children, className = '', variant = 'primary', ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' | 'danger' }) {
@@ -22,6 +22,7 @@ export function SiteHeader() {
         <nav className={`main-nav ${open ? 'main-nav-open' : ''}`} aria-label="Main navigation">
           <NavLink to="/#how-it-works" end onClick={close}>{message('nav').howItWorks}</NavLink>
           <NavLink to="/templates" onClick={close}>{message('nav').templates}</NavLink>
+          <NavLink to="/my-cvs" onClick={close}>My CVs</NavLink>
           <NavLink to="/help" onClick={close}>{message('nav').help}</NavLink>
           <Link to="/builder" className="button button-primary nav-cta" onClick={close}>{message('nav').createMyCv} <ArrowRight size={16} /></Link>
         </nav>
@@ -89,11 +90,18 @@ export function EmptyState({ title, description, action }: { title: string; desc
 }
 
 export function LocalDataNotice() {
-  return <div className="local-note"><span className="local-note-check"><Check size={14} /></span><span>Your data stays in this browser on this device. Clearing browser data will remove it. Use Export JSON to back up.</span></div>;
+  return <div className="local-note"><span className="local-note-check"><Check size={14} /></span><span><strong>Private by design.</strong> Your data stays in this browser on this device. Clearing browser data will remove it. Use Export JSON to back up.</span></div>;
 }
 
+const noticeIcons = {
+  info: <Info size={16} />,
+  success: <CheckCircle2 size={16} />,
+  warning: <TriangleAlert size={16} />,
+  error: <AlertCircle size={16} />,
+};
+
 export function InlineNotice({ children, tone = 'info' }: { children: React.ReactNode; tone?: 'info' | 'success' | 'warning' | 'error' }) {
-  return <div className={`inline-notice notice-${tone}`} role={tone === 'error' ? 'alert' : undefined}>{children}</div>;
+  return <div className={`inline-notice notice-${tone}`} role={tone === 'error' ? 'alert' : undefined}><span className="notice-icon">{noticeIcons[tone]}</span><span>{children}</span></div>;
 }
 
 export function BackLink({ to, children }: { to: string; children: React.ReactNode }) {

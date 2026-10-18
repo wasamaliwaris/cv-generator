@@ -7,7 +7,7 @@ import { HelpPage, MyCVsPage, PrivacyPage, ProfilePage, TemplatesPage } from './
 import { Footer, SiteHeader } from './ui';
 
 function NotFoundPage() {
-  return <main className="page-width not-found-page"><div className="eyebrow">PAGE NOT FOUND</div><h1>That path is not here.</h1><p>The page may have moved, or the address may be incomplete.</p><Link to="/" className="button button-primary">Back to PathCV</Link></main>;
+  return <main className="page-width not-found-page"><div className="not-found-mark">?</div><div className="eyebrow">PAGE NOT FOUND</div><h1>That path is not here.</h1><p>The page may have moved, or the address may be incomplete.</p><Link to="/" className="button button-primary button-large">Back to PathCV</Link></main>;
 }
 
 function AppShell() {

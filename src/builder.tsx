@@ -1,24 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Check, CircleHelp, Download, Eye, FilePlus2, FileText, RotateCcw, RotateCw, Save, ShieldCheck } from 'lucide-react';
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Award, Briefcase, Check, CircleHelp, Download, Eye, FilePlus2, FileText, GraduationCap, Languages, Palette, Rocket, RotateCcw, RotateCw, Save, ShieldCheck, Sparkles, UserRound, Wrench } from 'lucide-react';
 import type { BuilderSetup, CVDocument, DateFormat, Profile, SectionKey, TemplateId } from './model';
 import { ACCENT_PALETTE, DEFAULT_SECTION_ORDER, SECTION_LABELS, TEMPLATE_META, emptyProfile, newDocument, sampleProfile } from './model';
 import { useAppData } from './app-context';
 import { AdditionalSectionFields, EducationFields, LanguageFields, PersonalFields, SkillsFields, SummaryFields, WorkExperienceFields } from './forms';
+import { TemplateMini } from './landing';
 import { Button, Field, InlineNotice, SelectField } from './ui';
 import { CVPreview } from './cv-preview';
 import { message as t } from './strings';
 
 const steps = [
-  { title: 'Personal details', description: 'The details you want people to use to reach you.' },
-  { title: 'Profile / summary', description: 'A short introduction to your experience and direction.' },
-  { title: 'Work experience', description: 'Start with your most recent or most relevant role.' },
-  { title: 'Education and training', description: 'Qualifications, training, and relevant learning.' },
-  { title: 'Skills', description: 'Specific abilities that fit the opportunity.' },
-  { title: 'Languages', description: 'Languages and a level that feels accurate.' },
-  { title: 'Additional sections', description: 'Projects, volunteering, certifications, and more.' },
-  { title: 'Choose design', description: 'Adjust the look, order, and visibility of your sections.' },
-  { title: 'Review and download', description: 'Check the details and print or save your PDF.' },
+  { title: 'Personal details', description: 'The details you want people to use to reach you.', icon: <UserRound size={14} /> },
+  { title: 'Profile / summary', description: 'A short introduction to your experience and direction.', icon: <Sparkles size={14} /> },
+  { title: 'Work experience', description: 'Start with your most recent or most relevant role.', icon: <Briefcase size={14} /> },
+  { title: 'Education and training', description: 'Qualifications, training, and relevant learning.', icon: <GraduationCap size={14} /> },
+  { title: 'Skills', description: 'Specific abilities that fit the opportunity.', icon: <Wrench size={14} /> },
+  { title: 'Languages', description: 'Languages and a level that feels accurate.', icon: <Languages size={14} /> },
+  { title: 'Additional sections', description: 'Projects, volunteering, certifications, and more.', icon: <Award size={14} /> },
+  { title: 'Choose design', description: 'Adjust the look, order, and visibility of your sections.', icon: <Palette size={14} /> },
+  { title: 'Review and download', description: 'Check the details and print or save your PDF.', icon: <Rocket size={14} /> },
 ];
 
 type SetupState = BuilderSetup & { dateFormat: DateFormat };
@@ -204,7 +205,7 @@ function DesignEditor({ document: doc, onChange }: { document: CVDocument; onCha
     return { ...current, sectionOrder: order };
   });
   return <div className="form-stack design-editor">
-    <section className="design-section"><div className="design-section-title"><div><h2>Choose a template</h2><p>Switch any time; your content stays with this CV.</p></div></div><div className="template-select-grid">{templateIds.map((id) => <button type="button" key={id} className={`template-select-card ${doc.templateId === id ? 'selected' : ''}`} aria-pressed={doc.templateId === id} onClick={() => onChange((current) => ({ ...current, templateId: id }))}><span className={`template-mini template-mini-${id}`} aria-hidden="true"><i /><b /><b /><em /><b /></span><strong>{TEMPLATE_META[id].name}</strong><small>{TEMPLATE_META[id].descriptor}</small>{doc.templateId === id && <span className="selected-label"><Check size={13} /> Selected</span>}</button>)}</div></section>
+    <section className="design-section"><div className="design-section-title"><div><h2>Choose a template</h2><p>Switch any time; your content stays with this CV.</p></div></div><div className="template-select-grid">{templateIds.map((id) => <button type="button" key={id} className={`template-select-card ${doc.templateId === id ? 'selected' : ''}`} aria-pressed={doc.templateId === id} onClick={() => onChange((current) => ({ ...current, templateId: id }))}><TemplateMini id={id} /><strong>{TEMPLATE_META[id].name}</strong><small>{TEMPLATE_META[id].descriptor}</small>{doc.templateId === id && <span className="selected-label"><Check size={13} /> Selected</span>}</button>)}</div></section>
     <section className="design-section"><h2>Personalize the details</h2><div className="form-grid form-grid-two"><div className="span-two"><span className="field-label">Accent color</span><div className="color-picker" role="group" aria-label="Accent color">{ACCENT_PALETTE.map((color) => <button type="button" key={color.value} className={`color-swatch ${doc.accentColor === color.value ? 'active' : ''}`} style={{ '--swatch': color.value } as React.CSSProperties} aria-label={`${color.name}${doc.accentColor === color.value ? ', selected' : ''}`} title={color.name} aria-pressed={doc.accentColor === color.value} onClick={() => onChange((current) => ({ ...current, accentColor: color.value }))} />)}</div></div><SelectField label="Font" value={doc.fontChoice} onChange={(e) => onChange((current) => ({ ...current, fontChoice: e.target.value as CVDocument['fontChoice'] }))}><option value="system">System sans-serif</option><option value="humanist">Humanist sans-serif</option><option value="serif">Editorial serif</option></SelectField><SelectField label="Date format" value={doc.dateFormat} onChange={(e) => onChange((current) => ({ ...current, dateFormat: e.target.value as DateFormat }))}><option value="month-year">Full month and year</option><option value="short-month">Short month and year</option><option value="numeric">MM/YYYY</option></SelectField><label className="checkbox-row span-two"><input type="checkbox" checked={doc.showPhoto} onChange={(e) => onChange((current) => ({ ...current, showPhoto: e.target.checked }))} /><span>Show my photo in this CV</span></label>{doc.showPhoto && !doc.profileSnapshot.personal.photoDataUrl && <p className="field-hint span-two">Add a photo in Personal details first. You can keep it hidden here.</p>}</div></section>
     <section className="design-section"><div className="design-section-title"><div><h2>Sections and order</h2><p>Use the arrows to adjust the reading order. Empty sections are omitted in the preview.</p></div></div><div className="section-order-list">{doc.sectionOrder.map((key, index) => <div className="section-order-row" key={key}><label className="switch-label visibility-switch"><input type="checkbox" checked={doc.sectionVisibility[key]} onChange={(e) => onChange((current) => ({ ...current, sectionVisibility: { ...current.sectionVisibility, [key]: e.target.checked } }))} /><span>{SECTION_LABELS[key]}</span></label><div><button type="button" className="icon-button" title="Move section up" aria-label={`Move ${SECTION_LABELS[key]} up`} disabled={index === 0} onClick={() => move(key, -1)}><ArrowUp size={15} /></button><button type="button" className="icon-button" title="Move section down" aria-label={`Move ${SECTION_LABELS[key]} down`} disabled={index === doc.sectionOrder.length - 1} onClick={() => move(key, 1)}><ArrowDown size={15} /></button></div></div>)}</div><button type="button" className="text-action" onClick={() => onChange((current) => ({ ...current, sectionOrder: [...DEFAULT_SECTION_ORDER] }))}>Reset section order</button></section>
   </div>;
