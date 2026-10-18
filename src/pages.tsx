@@ -1,27 +1,38 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Copy, FilePlus2, Pencil, Trash2 } from 'lucide-react';
-import type { CVDocument, TemplateId } from './model';
-import { TEMPLATE_META, TEMPLATE_ORDER, uid } from './model';
+import type { CVDocument, Profile, TemplateId } from './model';
+import { TEMPLATE_META, TEMPLATE_ORDER, newDocument, sampleProfile, uid } from './model';
 import { scoreCV } from './cv-utils';
 import { useAppData } from './app-context';
 import { AdditionalSectionFields, EducationFields, LanguageFields, PersonalFields, SkillsFields, SummaryFields, WorkExperienceFields } from './forms';
 import { DataTools } from './data-tools';
 import { TemplateMini } from './landing';
+import { CVPreview } from './cv-preview';
 import { Button, EmptyState, InlineNotice, LocalDataNotice, PageHeading } from './ui';
 
 const templateIds: TemplateId[] = TEMPLATE_ORDER;
+
+function displaySampleProfile(): Profile {
+  const profile = sampleProfile();
+  const clean = (value: string) => value.replace(/ · fictional( sample)?/g, '');
+  profile.personal.headline = clean(profile.personal.headline);
+  profile.workExperience.forEach((entry) => { entry.employer = clean(entry.employer); });
+  profile.education.forEach((entry) => { entry.institution = clean(entry.institution); });
+  return profile;
+}
 
 export function TemplatesPage() {
   const [filter, setFilter] = useState('All');
   const navigate = useNavigate();
   const filters = ['All', 'Classic', 'Modern', 'Compact', 'Creative'];
   const visible = templateIds.filter((id) => filter === 'All' || TEMPLATE_META[id].category === filter);
+  const sampleDocs = useMemo(() => Object.fromEntries(templateIds.map((id) => [id, newDocument(displaySampleProfile(), id, 'Sample CV')])) as Record<TemplateId, CVDocument>, []);
   return <main className="page-width standard-page templates-page">
-    <PageHeading eyebrow="TEN ORIGINAL LAYOUTS" title="A good starting point." description="Choose a structure that suits the story you want to tell. Every template stays editable, and changing designs never removes your content." />
+    <PageHeading eyebrow="TEN ORIGINAL LAYOUTS" title="A good starting point." description="Every preview shows the same fictional sample CV, so you can compare designs fairly. Pick a structure that suits your story — switching designs never removes your content." />
     <div className="template-filters" role="group" aria-label="Filter templates">{filters.map((item) => <button type="button" key={item} className={filter === item ? 'active' : ''} aria-pressed={filter === item} onClick={() => setFilter(item)}>{item}</button>)}</div>
-    <div className="gallery-grid">{visible.map((id) => <article className="gallery-card" key={id}><div className="gallery-preview"><TemplateMini id={id} fictional /><span className="gallery-category">{TEMPLATE_META[id].category}</span>{id === 'modern' && <span className="gallery-popular">Most popular</span>}</div><div className="gallery-card-body"><h2>{TEMPLATE_META[id].name}</h2><p>{TEMPLATE_META[id].descriptor}</p><p className="fictional-copy">Fictional preview: Maya Rahman · Product designer</p><Button type="button" onClick={() => navigate(`/builder?template=${id}`)}>Use this template <ArrowRight size={16} /></Button></div></article>)}</div>
-    <InlineNotice tone="info">The sample name and role shown in these thumbnails are fictional. Your CV details are never used in a public template gallery.</InlineNotice>
+    <div className="gallery-grid">{visible.map((id) => <article className="gallery-card" key={id}><div className="gallery-preview"><div className="gallery-sample" aria-hidden="true" ref={(node) => { node?.setAttribute('inert', ''); }}><CVPreview document={sampleDocs[id]} showControls={false} printable={false} paperId={`sample-cv-${id}`} /></div><span className="gallery-stamp">Fictional sample</span><span className="gallery-category">{TEMPLATE_META[id].category}</span>{id === 'modern' && <span className="gallery-popular">Most popular</span>}</div><div className="gallery-card-body"><h2>{TEMPLATE_META[id].name}</h2><p>{TEMPLATE_META[id].descriptor}</p><p className="fictional-copy">Previewed with a fictional sample CV · Maya Rahman, product designer</p><div className="gallery-card-actions"><Button type="button" onClick={() => navigate(`/builder?template=${id}`)}>Use this template <ArrowRight size={16} /></Button><Button type="button" variant="secondary" onClick={() => navigate(`/builder?template=${id}&sample=1`)}>Try with sample data</Button></div></div></article>)}</div>
+    <InlineNotice tone="info">Every preview shows the same fictional sample CV, so designs are easy to compare. Your own details are never used in this gallery.</InlineNotice>
   </main>;
 }
 
@@ -35,6 +46,7 @@ const faqGroups = [
   { q: 'Is the CV guaranteed to pass ATS?', a: 'No. These templates are designed to be straightforward and readable, but no tool can guarantee how a particular system or employer will handle a CV.' },
   { q: 'How do I remove my data?', a: 'Use Clear all data on Profile or Saved CVs and confirm the action. You can also clear this site’s browser storage through your browser settings.' },
   { q: 'How do I save a PDF?', a: 'Choose “Download PDF (opens print dialog)” and select “Save as PDF” in your browser. For the intended layout, select A4 and turn off browser headers and footers.' },
+  { q: 'Can I try a template with sample data?', a: 'Yes. On Templates, every design shows a fictional sample CV. Choose “Try with sample data” to open it in the builder, then replace each detail with your own.' },
   { q: 'What is Express mode?', a: 'Express mode builds a CV from one short page of essentials in about 2 minutes. You land in the builder at the design step, where everything stays editable and you can download the PDF.' },
   { q: 'Are there keyboard shortcuts?', a: 'In the builder: Ctrl (or ⌘) + Z undoes, Ctrl/⌘ + Shift + Z or Ctrl + Y redoes, and Alt + Left/Right arrows move between steps. Shortcuts never trigger while you are typing.' },
   { q: 'Can I get a plain-text version of my CV?', a: 'Yes. On the Review step, copy a clean plain-text version for “paste your CV” boxes on job portals, or download it as a .txt file.' },
