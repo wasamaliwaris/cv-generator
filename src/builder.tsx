@@ -89,7 +89,8 @@ export function BuilderPage() {
         draftRef.current = fresh; setDraft(fresh); storeDraft(fresh);
       }
     } else if (requestedTemplate && TEMPLATE_ORDER.includes(requestedTemplate)) {
-      const fresh = newDocument(data.profile, requestedTemplate);
+      const useSample = params.get('sample') === '1';
+      const fresh = newDocument(useSample ? sampleProfile() : data.profile, requestedTemplate, useSample ? 'Sample CV' : 'Untitled CV');
       draftRef.current = fresh; setDraft(fresh); storeDraft(fresh);
       setCurrentStep(hasStep ? requestedStep : 7);
     } else {

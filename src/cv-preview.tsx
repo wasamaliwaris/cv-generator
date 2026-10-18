@@ -115,7 +115,7 @@ function SectionContent({ keyName, profile, doc }: { keyName: SectionKey; profil
   return <div>{rows.map((item) => <OptionalItem key={item.id} item={item} doc={doc} />)}</div>;
 }
 
-export function CVPreview({ document: doc, showControls = true, onPageCount }: { document: CVDocument; showControls?: boolean; onPageCount?: (pages: number) => void }) {
+export function CVPreview({ document: doc, showControls = true, onPageCount, paperId = 'printable-cv', printable = true }: { document: CVDocument; showControls?: boolean; onPageCount?: (pages: number) => void; paperId?: string; printable?: boolean }) {
   const paperRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(100);
@@ -203,8 +203,8 @@ export function CVPreview({ document: doc, showControls = true, onPageCount }: {
         <div className="preview-stage" style={{ width: `${210 * scale}mm`, height: `${height * scale}px` }}>
           <div
             ref={paperRef}
-            id="printable-cv"
-            className={`cv-paper printable-document ${templateClass}`}
+            id={paperId}
+            className={`cv-paper ${printable ? 'printable-document ' : ''}${templateClass}`}
             style={{ ...fontStyle, transform: `scale(${scale})` }}
           >
             {doc.templateId === 'sidebar' ? (
