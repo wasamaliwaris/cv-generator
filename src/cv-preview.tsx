@@ -1,4 +1,4 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Minus, Plus } from 'lucide-react';
 import type { CVDocument, Profile, SectionKey, OptionalSectionEntry, WorkExperience, EducationEntry } from './model';
 import { SECTION_LABELS, cleanUrl, dateRange } from './model';
@@ -115,7 +115,7 @@ function SectionContent({ keyName, profile, doc }: { keyName: SectionKey; profil
   return <div>{rows.map((item) => <OptionalItem key={item.id} item={item} doc={doc} />)}</div>;
 }
 
-export function CVPreview({ document: doc, showControls = true }: { document: CVDocument; showControls?: boolean }) {
+export function CVPreview({ document: doc, showControls = true, onPageCount }: { document: CVDocument; showControls?: boolean; onPageCount?: (pages: number) => void }) {
   const paperRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const [zoom, setZoom] = useState(100);
@@ -159,6 +159,10 @@ export function CVPreview({ document: doc, showControls = true }: { document: CV
     observer.observe(viewport);
     return () => observer.disconnect();
   }, [showControls]);
+
+  useEffect(() => {
+    onPageCount?.(pageCount);
+  }, [pageCount, onPageCount]);
 
   const scale = fitScale * zoom / 100;
   const order = doc.sectionOrder;

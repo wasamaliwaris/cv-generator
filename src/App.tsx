@@ -2,6 +2,7 @@ import { BrowserRouter, Route, Routes, Link } from 'react-router-dom';
 import { AppProvider } from './app-context';
 import { BuilderPage } from './builder';
 import { CoverLetterPage } from './cover-letter';
+import { ExpressPage } from './express';
 import { LandingPage } from './landing';
 import { HelpPage, MyCVsPage, PrivacyPage, ProfilePage, TemplatesPage } from './pages';
 import { Footer, SiteHeader } from './ui';
@@ -14,6 +15,7 @@ function AppShell() {
   return <div className="app-shell"><SiteHeader /><Routes>
     <Route path="/" element={<LandingPage />} />
     <Route path="/builder" element={<BuilderPage />} />
+    <Route path="/express" element={<ExpressPage />} />
     <Route path="/templates" element={<TemplatesPage />} />
     <Route path="/profile" element={<ProfilePage />} />
     <Route path="/my-cvs" element={<MyCVsPage />} />

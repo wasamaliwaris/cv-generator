@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
-import { ArrowDownRight, ArrowRight, BadgeCheck, BookmarkCheck, Check, Download, FileDown, FileText, Info, Languages, Layers3, ListChecks, LockKeyhole, PenLine, RefreshCw, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowDownRight, ArrowRight, BadgeCheck, BookmarkCheck, Check, Download, FileDown, FileText, History, Info, Languages, Layers3, ListChecks, LockKeyhole, PenLine, RefreshCw, ShieldCheck, Sparkles, Zap } from 'lucide-react';
 import { TEMPLATE_META, type TemplateId } from './model';
+import { useAppData } from './app-context';
 import { message } from './strings';
 
 const features = [
@@ -41,6 +42,8 @@ export function TemplateMini({ id, fictional = false }: { id: TemplateId; fictio
 }
 
 export function LandingPage() {
+  const { data } = useAppData();
+  const latest = [...data.documents].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
   return <main className="landing-page">
     <section className="hero-section">
       <div className="hero-glow" aria-hidden="true" />
@@ -52,6 +55,8 @@ export function LandingPage() {
           <p className="hero-subtitle">Create, tailor, preview, and download a professional CV — completely free, right in your browser.</p>
           <div className="hero-actions"><Link to="/builder" className="button button-primary button-large">Create my CV free <ArrowRight size={18} /></Link><Link to="/templates" className="button button-outline button-large">Browse templates</Link></div>
           <p className="hero-promise"><ShieldCheck size={15} />{message('promise')}</p>
+          {latest && <Link to={`/builder?id=${encodeURIComponent(latest.id)}`} className="resume-card"><span className="resume-icon"><History size={16} /></span><span className="resume-text"><strong>Continue: {latest.name || 'Untitled CV'}</strong><small>Pick up where you left off</small></span><ArrowRight size={16} /></Link>}
+          <Link to="/express" className="express-link"><Zap size={14} /> In a rush? Try Express mode — a CV in about 2 minutes</Link>
           <div className="hero-stats">
             <div className="hero-stat"><strong>04</strong><span>Original templates</span></div>
             <div className="hero-stat"><strong>A4</strong><span>Print-ready PDF</span></div>

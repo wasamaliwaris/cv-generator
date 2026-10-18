@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowDown, ArrowUp, ChevronDown, Copy, Plus, Trash2, Upload, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, ChevronDown, Copy, Plus, Sparkles, Trash2, Upload, X } from 'lucide-react';
 import type { EducationEntry, LanguageEntry, MonthDate, OptionalSectionEntry, Profile, SectionKey, SkillCategory, WorkExperience } from './model';
 import { OPTIONAL_SECTION_KEYS, SECTION_LABELS, uid } from './model';
+import { ACTION_VERBS, BULLET_EXAMPLES, SUMMARY_EXAMPLES } from './starters';
 import { Field, SelectField, TextAreaField, Button, InlineNotice } from './ui';
 
 const countryCodes = [
@@ -81,6 +82,7 @@ export function PersonalFields({ profile, onChange }: { profile: Profile; onChan
 export function SummaryFields({ profile, onChange }: { profile: Profile; onChange: (profile: Profile) => void }) {
   return <div className="form-stack">
     <TextAreaField label="Professional summary" rows={7} maxLength={1400} value={profile.summary} onChange={(e) => onChange({ ...profile, summary: e.target.value })} hint={`${profile.summary.length} / 1,400 characters · A few specific sentences are usually enough.`} placeholder="Describe your experience, strengths, and the kind of work you do well." />
+    <div className="starter-chips"><span className="starter-label"><Sparkles size={14} /> Try an example starter:</span><div className="suggestion-list">{SUMMARY_EXAMPLES.map((ex) => <button key={ex.label} type="button" className="suggestion-chip" onClick={() => { if (profile.summary.trim() && !window.confirm('Replace your current summary with this example? You can edit it afterwards.')) return; onChange({ ...profile, summary: ex.text }); }}>{ex.label}</button>)}</div><p className="field-hint">Examples contain [bracketed] placeholders — replace every one with your own details.</p></div>
     <div className="prompt-panel"><h4>Prompts to help you draft</h4><ul><li>What kinds of problems do people rely on you to solve?</li><li>Which strengths or areas of experience are most relevant to this opportunity?</li><li>What is one concrete contribution you are proud of?</li></ul><p>These are prompts only; nothing is filled in automatically.</p></div>
   </div>;
 }
@@ -149,6 +151,7 @@ export function WorkExperienceFields({ profile, onChange }: { profile: Profile; 
           <label className="checkbox-row span-two"><input type="checkbox" checked={item.current} onChange={(e) => { patch(item.id, 'current', e.target.checked); if (e.target.checked) patch(item.id, 'endDate', null); }} /><span>I currently work here</span></label>
           <TextAreaField label="Description bullets" className="span-two" rows={4} value={item.description} onChange={(e) => patch(item.id, 'description', e.target.value)} hint="Write one bullet per line. Start with what you did." placeholder={'Coordinated weekly release planning\nImproved the handover between teams'} />
           <TextAreaField label="Achievements (optional)" className="span-two" rows={3} value={item.achievements} onChange={(e) => patch(item.id, 'achievements', e.target.value)} placeholder="Add a measurable result or specific contribution." />
+          <div className="span-two verb-block"><span className="field-label">Stuck? Start a bullet with a verb</span><div className="verb-chips">{ACTION_VERBS.map((verb) => <button key={verb} type="button" className="verb-chip" onClick={() => patch(item.id, 'description', item.description ? `${item.description.replace(/\s+$/, '')}\n${verb} ` : `${verb} `)}>{verb}</button>)}</div><button type="button" className="text-action" onClick={() => { const examples = BULLET_EXAMPLES.join('\n'); if (item.description.trim() && !window.confirm('Add 4 example bullets to this role? They contain placeholders for you to replace.')) return; patch(item.id, 'description', item.description.trim() ? `${item.description.replace(/\s+$/, '')}\n${examples}` : examples); }}><Plus size={14} /> Insert example bullets</button></div>
           <div className="span-two link-list"><div className="field-label">Links (optional)</div>{item.links.map((link, linkIndex) => <div className="link-edit-row" key={link.id}><input aria-label="Link label" placeholder="Label" value={link.label} onChange={(e) => patch(item.id, 'links', item.links.map((old) => old.id === link.id ? { ...old, label: e.target.value } : old))} /><input aria-label="Link URL" placeholder="https://…" value={link.url} onChange={(e) => patch(item.id, 'links', item.links.map((old) => old.id === link.id ? { ...old, url: e.target.value } : old))} /><button type="button" className="icon-button" aria-label="Remove link" onClick={() => { if (window.confirm('Remove this link?')) patch(item.id, 'links', item.links.filter((old) => old.id !== link.id)); }}><X size={15} /></button>{linkIndex === 0 && <span className="sr-only">Use a short label and a full URL.</span>}</div>)}<button type="button" className="text-action" onClick={() => patch(item.id, 'links', [...item.links, { id: uid(), label: '', url: '' }])}><Plus size={14} /> Add a link</button></div>
         </div>
       </EntryCard>;
