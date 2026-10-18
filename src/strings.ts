@@ -12,7 +12,6 @@ export const messages = {
       savedCvs: 'Saved CVs',
       coverLetter: 'Cover letter',
       privacy: 'Privacy',
-      contactComingLater: 'Contact · coming later',
     },
     status: {
       saved: 'Saved',

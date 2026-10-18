@@ -20,6 +20,8 @@ Build the production bundle with `npm run build`.
 - `/my-cvs` — locally saved CV versions and backup controls
 - `/cover-letter` — optional matching letter builder
 - `/help` and `/privacy` — plain-language help and data handling
+- `/resources` and `/resources/:slug` — original career guides and in-depth articles
+- `/about` and `/contact` — who we are, and how to reach us
 
 ## Data and PDF behavior
 
