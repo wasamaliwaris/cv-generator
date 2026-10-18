@@ -1,4 +1,4 @@
-export type TemplateId = 'clear' | 'modern' | 'compact' | 'editorial';
+export type TemplateId = 'clear' | 'modern' | 'compact' | 'editorial' | 'bold' | 'minimal' | 'sidebar' | 'classic' | 'sleek' | 'fresh';
 export type FontChoice = 'system' | 'humanist' | 'serif';
 export type DateFormat = 'month-year' | 'short-month' | 'numeric';
 export type SectionKey =
@@ -193,7 +193,17 @@ export const TEMPLATE_META: Record<TemplateId, { name: string; descriptor: strin
   modern: { name: 'Modern', descriptor: 'A clear hierarchy with a small accent.', category: 'Modern' },
   compact: { name: 'Compact', descriptor: 'Tighter rhythm for a longer career story.', category: 'Compact' },
   editorial: { name: 'Editorial', descriptor: 'Refined type with a considered header.', category: 'Modern' },
+  bold: { name: 'Bold', descriptor: 'Confident and high-contrast with a strong header bar.', category: 'Modern' },
+  minimal: { name: 'Minimal', descriptor: 'Quiet and spacious with fine hairline rules.', category: 'Classic' },
+  sidebar: { name: 'Sidebar', descriptor: 'Two-column layout with a smart side rail.', category: 'Modern' },
+  classic: { name: 'Classic', descriptor: 'Timeless centered serif for formal industries.', category: 'Classic' },
+  sleek: { name: 'Sleek', descriptor: 'Dark header block with a sharp, modern edge.', category: 'Modern' },
+  fresh: { name: 'Fresh', descriptor: 'Friendly pill titles with a light, open feel.', category: 'Creative' },
 };
+
+export const TEMPLATE_ORDER: TemplateId[] = [
+  'clear', 'modern', 'compact', 'editorial', 'bold', 'minimal', 'sidebar', 'classic', 'sleek', 'fresh',
+];
 
 export const ACCENT_PALETTE = [
   { name: 'Deep teal', value: '#147d78' },

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Award, Briefcase, Check, CircleHelp, Copy, Download, Eye, EyeOff, FileDown, FilePlus2, FileText, GraduationCap, Languages, Lightbulb, Palette, Plus, Rocket, RotateCcw, RotateCw, Save, ShieldCheck, Sparkles, UserRound, Wrench, Zap } from 'lucide-react';
 import type { BuilderSetup, CVDocument, DateFormat, Profile, SectionKey, TemplateId } from './model';
-import { ACCENT_PALETTE, DEFAULT_SECTION_ORDER, SECTION_LABELS, TEMPLATE_META, emptyProfile, newDocument, sampleProfile } from './model';
+import { ACCENT_PALETTE, DEFAULT_SECTION_ORDER, SECTION_LABELS, TEMPLATE_META, TEMPLATE_ORDER, emptyProfile, newDocument, sampleProfile } from './model';
 import { useAppData } from './app-context';
 import { AdditionalSectionFields, EducationFields, LanguageFields, PersonalFields, SkillsFields, SummaryFields, WorkExperienceFields } from './forms';
 import { TemplateMini } from './landing';
@@ -88,7 +88,7 @@ export function BuilderPage() {
         const fresh = newDocument(data.profile, 'clear');
         draftRef.current = fresh; setDraft(fresh); storeDraft(fresh);
       }
-    } else if (requestedTemplate && ['clear', 'modern', 'compact', 'editorial'].includes(requestedTemplate)) {
+    } else if (requestedTemplate && TEMPLATE_ORDER.includes(requestedTemplate)) {
       const fresh = newDocument(data.profile, requestedTemplate);
       draftRef.current = fresh; setDraft(fresh); storeDraft(fresh);
       setCurrentStep(hasStep ? requestedStep : 7);
@@ -243,7 +243,7 @@ export function BuilderPage() {
 function QuickDesignBar({ doc, onTemplate, onAccent }: { doc: CVDocument; onTemplate: (id: TemplateId) => void; onAccent: (color: string) => void }) {
   return <div className="quick-design">
     <div className="quick-templates" role="group" aria-label="Quick template switcher">
-      {(['clear', 'modern', 'compact', 'editorial'] as TemplateId[]).map((id) => <button key={id} type="button" className={`quick-template ${doc.templateId === id ? 'selected' : ''}`} title={TEMPLATE_META[id].name} aria-label={`Use ${TEMPLATE_META[id].name} template`} aria-pressed={doc.templateId === id} onClick={() => onTemplate(id)}><TemplateMini id={id} />{doc.templateId === id && <span className="quick-check"><Check size={11} /></span>}</button>)}
+      {TEMPLATE_ORDER.map((id) => <button key={id} type="button" className={`quick-template ${doc.templateId === id ? 'selected' : ''}`} title={TEMPLATE_META[id].name} aria-label={`Use ${TEMPLATE_META[id].name} template`} aria-pressed={doc.templateId === id} onClick={() => onTemplate(id)}><TemplateMini id={id} />{doc.templateId === id && <span className="quick-check"><Check size={11} /></span>}</button>)}
     </div>
     <div className="quick-accents" role="group" aria-label="Quick accent color">
       {ACCENT_PALETTE.map((c) => <button key={c.value} type="button" className={`quick-dot ${doc.accentColor === c.value ? 'active' : ''}`} style={{ '--swatch': c.value } as React.CSSProperties} title={c.name} aria-label={`${c.name} accent`} aria-pressed={doc.accentColor === c.value} onClick={() => onAccent(c.value)} />)}
@@ -252,7 +252,7 @@ function QuickDesignBar({ doc, onTemplate, onAccent }: { doc: CVDocument; onTemp
 }
 
 function DesignEditor({ document: doc, onChange }: { document: CVDocument; onChange: (mutate: (current: CVDocument) => CVDocument) => void }) {
-  const templateIds: TemplateId[] = ['clear', 'modern', 'compact', 'editorial'];
+  const templateIds: TemplateId[] = TEMPLATE_ORDER;
   const move = (key: SectionKey, direction: -1 | 1) => onChange((current) => {
     const order = [...current.sectionOrder]; const index = order.indexOf(key); const next = index + direction;
     if (index < 0 || next < 0 || next >= order.length) return current;

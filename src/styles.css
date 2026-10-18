@@ -2537,3 +2537,134 @@ html { scrollbar-color: #8fb3a6 transparent; }
 @media (max-width: 400px) {
   .hero-orb-a, .hero-orb-b { opacity: 0.6; }
 }
+
+
+/* ================= Phase 4: six new CV templates ================= */
+/* ---- Bold: thick accent rules, uppercase, high-impact ---- */
+.cv-bold { border-top: 3.5mm solid var(--cv-accent); }
+.cv-bold .cv-personal-header { border-bottom: 1.2mm solid var(--cv-accent); padding-bottom: 6mm; }
+.cv-bold .cv-personal-header h1 { text-transform: uppercase; }
+.cv-bold .cv-headline { font-weight: 700; }
+.cv-bold .cv-section > h2 { border-bottom-width: 0.8mm; padding-bottom: 1.6mm; }
+.cv-bold .cv-entry-top h3 { text-transform: uppercase; font-size: 9pt; letter-spacing: 0.04em; }
+/* ---- Minimal: airy, hairlines, small-caps grey headings ---- */
+.cv-minimal { padding-top: 18mm; }
+.cv-minimal .cv-personal-header { border-bottom: 1px solid #e3e8e6; padding-bottom: 7mm; }
+.cv-minimal .cv-personal-header h1 { font-weight: 500; letter-spacing: -0.02em; }
+.cv-minimal .cv-headline { font-weight: 500; color: #5c7077; }
+.cv-minimal .cv-contact-list { color: #8a9aa3; }
+.cv-minimal .cv-section { margin-top: 7mm; }
+.cv-minimal .cv-section > h2 {
+  border: 0; color: color-mix(in srgb, var(--cv-accent) 60%, #8a9aa3);
+  font-size: 8.5pt; font-weight: 600; letter-spacing: 0.22em;
+}
+.cv-minimal .cv-entry-top h3 { font-weight: 600; }
+.cv-minimal .cv-entry-top time { color: #9aa9ad; }
+/* ---- Sidebar: tinted contact rail + main column ---- */
+.cv-sidebar { padding: 12mm 12mm 11mm; }
+.cv-sidebar-layout { display: flex; gap: 8mm; flex: 1 0 auto; min-height: 0; }
+.cv-rail {
+  flex: 0 0 54mm; width: 54mm; align-self: flex-start;
+  background: color-mix(in srgb, var(--cv-accent) 9%, #f4f7f5);
+  border: 1px solid color-mix(in srgb, var(--cv-accent) 18%, #e2e8e4);
+  border-radius: 3mm; padding: 6mm 5mm;
+}
+.cv-rail-photo {
+  width: 26mm; height: 26mm; object-fit: cover; border-radius: 50%;
+  border: 1mm solid #fff; box-shadow: 0 0 0 0.6mm var(--cv-accent);
+  display: block; margin: 0 auto 5mm;
+}
+.cv-rail-block { margin-bottom: 6mm; break-inside: avoid; page-break-inside: avoid; }
+.cv-rail-block:last-child { margin-bottom: 0; }
+.cv-rail-block > h2 {
+  margin: 0 0 2.5mm; color: var(--cv-accent); font-size: 9pt;
+  font-weight: 760; letter-spacing: 0.14em; text-transform: uppercase;
+  border-bottom: 0.5mm solid color-mix(in srgb, var(--cv-accent) 35%, white);
+  padding-bottom: 1.5mm;
+}
+.cv-rail-contacts { display: flex; flex-direction: column; gap: 1.6mm; color: #41565c; font-size: 8pt; line-height: 1.4; overflow-wrap: anywhere; }
+.cv-rail-contacts a { color: inherit; text-decoration: none; }
+.cv-rail .cv-skill-groups { gap: 2.2mm; }
+.cv-rail .cv-skill-row { grid-template-columns: 1fr; gap: 0.6mm; font-size: 8.3pt; }
+.cv-rail .cv-skill-row strong { font-size: 8.3pt; color: var(--cv-accent); }
+.cv-rail .cv-language-list { flex-direction: column; gap: 2mm; }
+.cv-maincol { flex: 1; min-width: 0; }
+.cv-sidebar .cv-personal-header { border-bottom: 0.8mm solid var(--cv-accent); padding-bottom: 5mm; }
+.cv-sidebar .cv-personal-header h1 { font-size: 23pt; }
+/* ---- Classic: centred serif, double rules ---- */
+.cv-classic { font-family: Georgia, "Times New Roman", serif; }
+.cv-classic .cv-personal-header { display: block; text-align: center; border-top: 1px solid #9a9a9a; border-bottom: 4px double #9a9a9a; padding: 4mm 0 6mm; }
+.cv-classic .cv-personal-header h1 { font-weight: 500; font-size: 26pt; }
+.cv-classic .cv-photo { display: block; margin: 0 auto 4mm; }
+.cv-classic .cv-headline { font-family: "Segoe UI", Arial, sans-serif; font-size: 9pt; letter-spacing: 0.06em; }
+.cv-classic .cv-contact-list { justify-content: center; font-family: "Segoe UI", Arial, sans-serif; }
+.cv-classic .cv-section > h2 { text-align: center; border: 0; border-bottom: 1px solid #b9b9b9; font-family: "Segoe UI", Arial, sans-serif; font-size: 9.5pt; letter-spacing: 0.2em; color: #3c3c3c; }
+.cv-classic .cv-entry-top h3 { font-size: 10pt; }
+/* ---- Sleek: dark bleeding header block ---- */
+.cv-sleek .cv-personal-header { margin: -15mm -16mm 6mm; padding: 13mm 16mm 7mm; background: linear-gradient(135deg, #16283c, #0b1a2b); border: 0; border-radius: 0; }
+.cv-sleek .cv-personal-header h1 { color: #fff; }
+.cv-sleek .cv-headline { color: #8fd8c4; }
+.cv-sleek .cv-contact-list { color: #b9cdd8; }
+.cv-sleek .cv-contact-list a { color: #d8e7ef; }
+.cv-sleek .cv-photo { border-color: rgba(255, 255, 255, 0.5); }
+/* ---- Fresh: pill headings, timeline entries ---- */
+.cv-fresh .cv-personal-header { border-bottom: 0; padding-bottom: 5mm; }
+.cv-fresh .cv-section > h2 { display: inline-block; border: 0; background: color-mix(in srgb, var(--cv-accent) 13%, white); border-radius: 999px; padding: 1.4mm 5mm; margin-bottom: 3mm; font-size: 9.5pt; letter-spacing: 0.12em; }
+.cv-fresh .cv-entry { border-left: 0.9mm solid color-mix(in srgb, var(--cv-accent) 45%, white); padding-left: 3.5mm; }
+.cv-fresh .cv-bullets li::marker { color: var(--cv-accent); }
+.cv-fresh .cv-skill-row strong { color: var(--cv-accent); }
+/* ---- Cover-letter variants for the new templates ---- */
+.letter-paper.cv-bold .letter-header { border-bottom-width: 4px; }
+.letter-paper.cv-bold .letter-header h1 { letter-spacing: -0.02em; }
+.letter-paper.cv-minimal .letter-header { border-bottom: 1px solid #d8dee2; }
+.letter-paper.cv-minimal .letter-header h1 { font-weight: 500; }
+.letter-paper.cv-minimal .letter-header p { color: #7a8f96; }
+.letter-paper.cv-sidebar .letter-copy { border-left: 1mm solid color-mix(in srgb, var(--cv-accent) 35%, white); padding-left: 6mm; }
+.letter-paper.cv-classic { font-family: Georgia, "Times New Roman", serif; }
+.letter-paper.cv-classic .letter-header { display: block; text-align: center; border-top: 1px solid #9a9a9a; border-bottom: 4px double #9a9a9a; padding-top: 3mm; }
+.letter-paper.cv-classic .letter-header h1 { font-weight: 500; }
+.letter-paper.cv-classic .letter-contact { align-items: center; max-width: unset; margin-top: 3mm; text-align: center; font-family: "Segoe UI", Arial, sans-serif; }
+.letter-paper.cv-sleek { overflow: hidden; }
+.letter-paper.cv-sleek .letter-header { margin: -17mm -18mm 0; padding: 14mm 18mm 8mm; background: linear-gradient(135deg, #16283c, #0b1a2b); border: 0; border-radius: 0; }
+.letter-paper.cv-sleek .letter-header h1 { color: #fff; }
+.letter-paper.cv-sleek .letter-header p { color: #8fd8c4; }
+.letter-paper.cv-sleek .letter-contact { color: #b9cdd8; }
+.letter-paper.cv-fresh .letter-date-line { display: inline-block; background: color-mix(in srgb, var(--cv-accent) 13%, white); border-radius: 999px; padding: 1.5mm 5mm; }
+
+
+/* ================= Phase 4: thumbnails, grids, responsive ================= */
+/* ---- Miniature flavours for the six new templates ---- */
+.template-mini-bold { --cv-accent: #b3402e; }
+.template-mini-bold .mini-paper-head { border-bottom: 3px solid #b3402e; }
+.template-mini-minimal { --cv-accent: #8a9aa3; }
+.template-mini-minimal .mini-paper-head { border-bottom: 1px solid #d5dcdf; }
+.template-mini-minimal .mini-paper-body span { background: #e4eaec; }
+.template-mini-sidebar { --cv-accent: #1f5d8b; }
+.template-mini-sidebar .mini-paper-body { border-left: 16px solid #dce8f0; padding-left: 8px; }
+.template-mini-classic { --cv-accent: #5b5b5b; }
+.template-mini-classic .mini-paper-head { border-bottom: 3px double #9a9a9a; }
+.template-mini-classic .mini-paper-head em { display: none; }
+.template-mini-classic .mini-paper-head i { left: 27%; }
+.template-mini-classic .mini-paper-head b { left: 35%; }
+.template-mini-sleek { --cv-accent: #1f8a70; }
+.template-mini-sleek .mini-paper-head { background: #17233f; border: 0; }
+.template-mini-sleek .mini-paper-head i { background: #fff; }
+.template-mini-sleek .mini-paper-head b { background: #2dd4a7; }
+.template-mini-fresh { --cv-accent: #2f9e6e; }
+.template-mini-fresh .mini-paper-body i { border-radius: 999px; height: 5px; }
+.template-mini-fresh .mini-paper-body span { background: #dcefe4; }
+/* ---- Grids sized for ten templates ---- */
+.landing-templates-grid { grid-template-columns: repeat(5, 1fr); }
+.template-select-grid { grid-template-columns: repeat(3, 1fr); }
+/* ---- Quick design bar: scrollable template strip ---- */
+.quick-templates { overflow-x: auto; scrollbar-width: thin; padding-bottom: 4px; scroll-padding-inline: 4px; }
+.quick-template { flex: 0 0 auto; }
+@media (max-width: 1180px) {
+  .landing-templates-grid { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 940px) {
+  .landing-templates-grid { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 760px) {
+  .template-select-grid { grid-template-columns: repeat(2, 1fr); }
+}

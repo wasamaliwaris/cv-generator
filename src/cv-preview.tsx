@@ -169,6 +169,26 @@ export function CVPreview({ document: doc, showControls = true, onPageCount }: {
   const templateClass = `cv-template cv-${doc.templateId} cv-font-${doc.fontChoice}`;
   const fontStyle = { '--cv-accent': doc.accentColor } as React.CSSProperties;
 
+  const hasSectionContent = (key: SectionKey): boolean => {
+    if (key === 'summary') return Boolean(profile.summary.trim());
+    if (key === 'experience') return profile.workExperience.some(hasWorkContent);
+    if (key === 'education') return profile.education.some(hasEducationContent);
+    if (key === 'skills') return profile.skills.some((skill) => skill.name.trim());
+    if (key === 'languages') return profile.languages.some((language) => language.language.trim());
+    return profile.optionalSections.some((item) => item.sectionKey === key && hasOptionalContent(item));
+  };
+
+  const renderSection = (key: SectionKey) => {
+    if (!doc.sectionVisibility[key]) return null;
+    const content = <SectionContent keyName={key} profile={profile} doc={doc} />;
+    if (!content || !hasSectionContent(key)) return null;
+    if (key === 'custom') {
+      const customNames = [...new Set(profile.optionalSections.filter((x) => x.sectionKey === 'custom' && hasOptionalContent(x)).map((x) => categoryName('custom', x)))];
+      return customNames.map((name) => <section className="cv-section" key={`custom-${name}`}><h2>{name}</h2><div><SectionContent keyName="custom" profile={{ ...profile, optionalSections: profile.optionalSections.filter((x) => categoryName('custom', x) === name) }} doc={doc} /></div></section>);
+    }
+    return <section className="cv-section" key={key}><h2>{SECTION_LABELS[key]}</h2><div>{content}</div></section>;
+  };
+
   return (
     <div className="cv-preview-component">
       {showControls && <div className="preview-toolbar">
@@ -187,40 +207,41 @@ export function CVPreview({ document: doc, showControls = true, onPageCount }: {
             className={`cv-paper printable-document ${templateClass}`}
             style={{ ...fontStyle, transform: `scale(${scale})` }}
           >
-            <header className="cv-personal-header">
-              {doc.showPhoto && profile.personal.photoDataUrl && <img className="cv-photo" src={profile.personal.photoDataUrl} alt={`${fullName} profile`} />}
-              <div className="cv-personal-main">
-                <h1>{fullName || <span className="cv-placeholder">Your name</span>}</h1>
-                {profile.personal.headline && <p className="cv-headline">{profile.personal.headline}</p>}
-                {contacts.length > 0 && <div className="cv-contact-list">{contacts.map((contact, index) => <span className="cv-contact" key={`${contact.label}-${index}`}>{contact.href ? <a href={contact.href}>{contact.label}</a> : contact.label}</span>)}</div>}
+            {doc.templateId === 'sidebar' ? (
+              <div className="cv-sidebar-layout">
+                <aside className="cv-rail">
+                  {doc.showPhoto && profile.personal.photoDataUrl && <img className="cv-rail-photo" src={profile.personal.photoDataUrl} alt={`${fullName} profile`} />}
+                  {contacts.length > 0 && <div className="cv-rail-block"><h2>Contact</h2><div className="cv-rail-contacts">{contacts.map((contact, index) => <span key={`${contact.label}-${index}`}>{contact.href ? <a href={contact.href}>{contact.label}</a> : contact.label}</span>)}</div></div>}
+                  {doc.sectionVisibility.skills && hasSectionContent('skills') && <div className="cv-rail-block"><h2>{SECTION_LABELS.skills}</h2><SectionContent keyName="skills" profile={profile} doc={doc} /></div>}
+                  {doc.sectionVisibility.languages && hasSectionContent('languages') && <div className="cv-rail-block"><h2>{SECTION_LABELS.languages}</h2><SectionContent keyName="languages" profile={profile} doc={doc} /></div>}
+                </aside>
+                <div className="cv-maincol">
+                  <header className="cv-personal-header">
+                    <div className="cv-personal-main">
+                      <h1>{fullName || <span className="cv-placeholder">Your name</span>}</h1>
+                      {profile.personal.headline && <p className="cv-headline">{profile.personal.headline}</p>}
+                    </div>
+                  </header>
+                  <div className="cv-content">
+                    {order.filter((key) => key !== 'skills' && key !== 'languages').map((key) => renderSection(key))}
+                  </div>
+                </div>
               </div>
-            </header>
-            <div className="cv-content">
-              {order.map((key) => {
-                if (!doc.sectionVisibility[key]) return null;
-                const content = <SectionContent keyName={key} profile={profile} doc={doc} />;
-                const hasContent = key === 'summary'
-                  ? Boolean(profile.summary.trim())
-                  : key === 'experience'
-                    ? profile.workExperience.some(hasWorkContent)
-                    : key === 'education'
-                      ? profile.education.some(hasEducationContent)
-                      : key === 'skills'
-                        ? profile.skills.some((skill) => skill.name.trim())
-                        : key === 'languages'
-                          ? profile.languages.some((language) => language.language.trim())
-                          : profile.optionalSections.some((item) => item.sectionKey === key && hasOptionalContent(item));
-                if (!content || !hasContent) return null;
-                const sectionLabel = key === 'custom'
-                  ? categoryName(key, profile.optionalSections.find((x) => x.sectionKey === 'custom'))
-                  : SECTION_LABELS[key];
-                if (key === 'custom') {
-                  const customNames = [...new Set(profile.optionalSections.filter((x) => x.sectionKey === 'custom' && hasOptionalContent(x)).map((x) => categoryName('custom', x)))];
-                  return customNames.map((name) => <section className="cv-section" key={`custom-${name}`}><h2>{name}</h2><div><SectionContent keyName="custom" profile={{ ...profile, optionalSections: profile.optionalSections.filter((x) => categoryName('custom', x) === name) }} doc={doc} /></div></section>);
-                }
-                return <section className="cv-section" key={key}><h2>{sectionLabel}</h2><div>{content}</div></section>;
-              })}
-            </div>
+            ) : (
+              <>
+                <header className="cv-personal-header">
+                  {doc.showPhoto && profile.personal.photoDataUrl && <img className="cv-photo" src={profile.personal.photoDataUrl} alt={`${fullName} profile`} />}
+                  <div className="cv-personal-main">
+                    <h1>{fullName || <span className="cv-placeholder">Your name</span>}</h1>
+                    {profile.personal.headline && <p className="cv-headline">{profile.personal.headline}</p>}
+                    {contacts.length > 0 && <div className="cv-contact-list">{contacts.map((contact, index) => <span className="cv-contact" key={`${contact.label}-${index}`}>{contact.href ? <a href={contact.href}>{contact.label}</a> : contact.label}</span>)}</div>}
+                  </div>
+                </header>
+                <div className="cv-content">
+                  {order.map((key) => renderSection(key))}
+                </div>
+              </>
+            )}
             <footer className="cv-print-footer">Made with PathCV</footer>
           </div>
         </div>

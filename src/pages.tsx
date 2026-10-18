@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Copy, FilePlus2, Pencil, Trash2 } from 'lucide-react';
 import type { CVDocument, TemplateId } from './model';
-import { TEMPLATE_META, uid } from './model';
+import { TEMPLATE_META, TEMPLATE_ORDER, uid } from './model';
 import { scoreCV } from './cv-utils';
 import { useAppData } from './app-context';
 import { AdditionalSectionFields, EducationFields, LanguageFields, PersonalFields, SkillsFields, SummaryFields, WorkExperienceFields } from './forms';
@@ -10,15 +10,15 @@ import { DataTools } from './data-tools';
 import { TemplateMini } from './landing';
 import { Button, EmptyState, InlineNotice, LocalDataNotice, PageHeading } from './ui';
 
-const templateIds: TemplateId[] = ['clear', 'modern', 'compact', 'editorial'];
+const templateIds: TemplateId[] = TEMPLATE_ORDER;
 
 export function TemplatesPage() {
   const [filter, setFilter] = useState('All');
   const navigate = useNavigate();
-  const filters = ['All', 'Classic', 'Modern', 'Compact'];
+  const filters = ['All', 'Classic', 'Modern', 'Compact', 'Creative'];
   const visible = templateIds.filter((id) => filter === 'All' || TEMPLATE_META[id].category === filter);
   return <main className="page-width standard-page templates-page">
-    <PageHeading eyebrow="FOUR ORIGINAL LAYOUTS" title="A good starting point." description="Choose a structure that suits the story you want to tell. Every template stays editable, and changing designs never removes your content." />
+    <PageHeading eyebrow="TEN ORIGINAL LAYOUTS" title="A good starting point." description="Choose a structure that suits the story you want to tell. Every template stays editable, and changing designs never removes your content." />
     <div className="template-filters" role="group" aria-label="Filter templates">{filters.map((item) => <button type="button" key={item} className={filter === item ? 'active' : ''} aria-pressed={filter === item} onClick={() => setFilter(item)}>{item}</button>)}</div>
     <div className="gallery-grid">{visible.map((id) => <article className="gallery-card" key={id}><div className="gallery-preview"><TemplateMini id={id} fictional /><span className="gallery-category">{TEMPLATE_META[id].category}</span>{id === 'modern' && <span className="gallery-popular">Most popular</span>}</div><div className="gallery-card-body"><h2>{TEMPLATE_META[id].name}</h2><p>{TEMPLATE_META[id].descriptor}</p><p className="fictional-copy">Fictional preview: Maya Rahman · Product designer</p><Button type="button" onClick={() => navigate(`/builder?template=${id}`)}>Use this template <ArrowRight size={16} /></Button></div></article>)}</div>
     <InlineNotice tone="info">The sample name and role shown in these thumbnails are fictional. Your CV details are never used in a public template gallery.</InlineNotice>
@@ -26,7 +26,7 @@ export function TemplatesPage() {
 }
 
 const faqGroups = [
-  { q: 'Is PathCV free?', a: 'Yes. Building, all four templates, and PDF export are free. There is no paywall, watermark, or signup requirement.' },
+  { q: 'Is PathCV free?', a: 'Yes. Building, all ten templates, and PDF export are free. There is no paywall, watermark, or signup requirement.' },
   { q: 'Do I need an account?', a: 'No. There is no account in this build. Your CV data is saved only in localStorage in this browser on this device.' },
   { q: 'Where is my data saved?', a: 'In this browser on this device only. It is not synced to an account or cloud. Clearing browser data removes it; you can export a JSON backup from Profile or Saved CVs.' },
   { q: 'Can I create multiple CVs?', a: 'Yes. Each saved CV is a separate local document with its own snapshot. Open another version without changing the source profile.' },

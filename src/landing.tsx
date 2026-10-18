@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowDownRight, ArrowRight, BadgeCheck, BookOpen, BookmarkCheck, Check, Code2, Download, FileDown, FileText, GraduationCap, HeartPulse, History, Info, Languages, Layers3, ListChecks, LockKeyhole, Palette, PenLine, RefreshCw, ShieldCheck, Sparkles, Store, Zap } from 'lucide-react';
-import { TEMPLATE_META, type TemplateId } from './model';
+import { TEMPLATE_META, TEMPLATE_ORDER, type TemplateId } from './model';
 import { useAppData } from './app-context';
 import { CountUp, Reveal } from './reveal';
 import { message } from './strings';
@@ -10,7 +10,7 @@ const features = [
   { icon: <Layers3 size={20} />, title: 'More than one version', text: 'Save different CVs for different opportunities without changing their source snapshots.' },
   { icon: <FileText size={20} />, title: 'A live preview', text: 'See your writing take shape as you edit, with selectable text and print-ready styling.' },
   { icon: <ListChecks size={20} />, title: 'Sections you control', text: 'Skip, reorder, show, or hide sections. Empty sections stay out of the final document.' },
-  { icon: <PenLine size={20} />, title: 'Four original templates', text: 'Choose a clear, modern, compact, or editorial layout without changing your content.' },
+  { icon: <PenLine size={20} />, title: 'Ten original templates', text: 'Choose from ten layouts — classic to creative — without changing your content.' },
   { icon: <RefreshCw size={20} />, title: 'A matching cover letter', text: 'Optional, editable, and never a requirement for building your CV.' },
   { icon: <Languages size={20} />, title: 'Localization-ready', text: 'Dates and phone details support international formats. English is the current interface language.' },
   { icon: <LockKeyhole size={20} />, title: 'A portable backup', text: 'Export or import your local data as JSON when you want to move or back it up.' },
@@ -42,7 +42,7 @@ const personas = [
 
 const stats = [
   { value: 6, suffix: '', label: 'Role starter kits' },
-  { value: 4, suffix: '', label: 'Original templates' },
+  { value: 10, suffix: '', label: 'Original templates' },
   { value: 9, suffix: '', label: 'Guided builder steps' },
   { value: 100, suffix: '%', label: 'Private & free' },
 ];
@@ -77,7 +77,7 @@ export function LandingPage() {
           {latest && <Link to={`/builder?id=${encodeURIComponent(latest.id)}`} className="resume-card"><span className="resume-icon"><History size={16} /></span><span className="resume-text"><strong>Continue: {latest.name || 'Untitled CV'}</strong><small>Pick up where you left off</small></span><ArrowRight size={16} /></Link>}
           <Link to="/express" className="express-link"><Zap size={14} /> In a rush? Try Express mode — a CV in about 2 minutes</Link>
           <div className="hero-stats">
-            <div className="hero-stat"><strong>04</strong><span>Original templates</span></div>
+            <div className="hero-stat"><strong>10</strong><span>Original templates</span></div>
             <div className="hero-stat"><strong>A4</strong><span>Print-ready PDF</span></div>
             <div className="hero-stat"><strong>100%</strong><span>Private &amp; local</span></div>
           </div>
@@ -117,11 +117,11 @@ export function LandingPage() {
 
     <section className="personas-section section-space"><div className="page-width"><Reveal><div className="section-heading-row"><div><div className="eyebrow">MADE FOR EVERY STAGE</div><h2>Start as <em>yourself.</em></h2></div><Link to="/express" className="arrow-link">Try Express mode <ArrowRight size={16} /></Link></div></Reveal><div className="personas-grid">{personas.map((persona, i) => <Reveal key={persona.kit} delay={(i % 3) * 90}><Link className="persona-card" to={`/express?kit=${persona.kit}`}><span className="persona-icon">{persona.icon}</span><div><strong>{persona.title}</strong><p>{persona.text}</p></div><span className="persona-go"><ArrowRight size={16} /></span></Link></Reveal>)}</div></div></section>
 
-    <section className="templates-section section-space"><div className="page-width"><Reveal><div className="section-heading-row"><div><div className="eyebrow">FOUR WAYS TO FRAME IT</div><h2>Start with a shape.<br /><em>Make it your own.</em></h2></div><Link to="/templates" className="arrow-link">See all templates <ArrowRight size={16} /></Link></div></Reveal><div className="landing-templates-grid">{(['clear', 'modern', 'compact', 'editorial'] as TemplateId[]).map((id, i) => <Reveal key={id} delay={i * 90}><LandingTemplateCard id={id} /></Reveal>)}</div><Reveal><p className="sample-disclaimer"><Info size={14} /> Template thumbnails are layout illustrations. Your own content stays editable and is not shared.</p></Reveal></div></section>
+    <section className="templates-section section-space"><div className="page-width"><Reveal><div className="section-heading-row"><div><div className="eyebrow">TEN WAYS TO FRAME IT</div><h2>Start with a shape.<br /><em>Make it your own.</em></h2></div><Link to="/templates" className="arrow-link">See all templates <ArrowRight size={16} /></Link></div></Reveal><div className="landing-templates-grid">{TEMPLATE_ORDER.map((id, i) => <Reveal key={id} delay={i * 90}><LandingTemplateCard id={id} /></Reveal>)}</div><Reveal><p className="sample-disclaimer"><Info size={14} /> Template thumbnails are layout illustrations. Your own content stays editable and is not shared.</p></Reveal></div></section>
 
     <section className="advice-section section-space"><div className="page-width advice-layout"><Reveal><div className="advice-intro"><div className="eyebrow">A FEW GOOD HABITS</div><h2>Make the reader’s next step easy.</h2><p>A CV cannot promise an outcome. Clear choices can help someone understand your experience.</p><Link to="/help" className="text-link">Read the practical FAQs <ArrowRight size={15} /></Link></div></Reveal><div className="advice-list">{advice.map(([title, body], index) => <Reveal key={title} delay={(index % 2) * 90}><article><span>{String(index + 1).padStart(2, '0')}</span><div><h3>{title}</h3><p>{body}</p></div></article></Reveal>)}</div></div></section>
 
-    <section className="faq-section section-space"><div className="page-width faq-layout"><Reveal><div><div className="eyebrow">GOOD TO KNOW</div><h2>Small answers,<br /><em>no fine print.</em></h2><Link to="/help" className="arrow-link">Visit Help <ArrowRight size={16} /></Link></div></Reveal><Reveal delay={120}><div className="faq-list"><details><summary>Is PathCV really free?</summary><p>Yes. Building, all four templates, and the print-to-PDF flow are free. There is no paywall.</p></details><details><summary>Do I need an account?</summary><p>No account is needed. Your information stays in this browser on this device.</p></details><details><summary>Does PathCV translate my CV?</summary><p>No. The interface is prepared for future localization, but your CV content is not automatically translated.</p></details><details><summary>Will my CV pass every ATS?</summary><p>No tool can guarantee that. The layouts are designed to be straightforward and readable, but outcomes vary.</p></details></div></Reveal></div></section>
+    <section className="faq-section section-space"><div className="page-width faq-layout"><Reveal><div><div className="eyebrow">GOOD TO KNOW</div><h2>Small answers,<br /><em>no fine print.</em></h2><Link to="/help" className="arrow-link">Visit Help <ArrowRight size={16} /></Link></div></Reveal><Reveal delay={120}><div className="faq-list"><details><summary>Is PathCV really free?</summary><p>Yes. Building, all ten templates, and the print-to-PDF flow are free. There is no paywall.</p></details><details><summary>Do I need an account?</summary><p>No account is needed. Your information stays in this browser on this device.</p></details><details><summary>Does PathCV translate my CV?</summary><p>No. The interface is prepared for future localization, but your CV content is not automatically translated.</p></details><details><summary>Will my CV pass every ATS?</summary><p>No tool can guarantee that. The layouts are designed to be straightforward and readable, but outcomes vary.</p></details></div></Reveal></div></section>
 
     <section className="last-cta-section"><div className="page-width"><Reveal><div className="last-cta">
       <div className="last-cta-copy"><div className="eyebrow">READY WHEN YOU ARE</div><h2>Your next role starts with a clear CV.</h2><p>Build it free, keep every version, and download a polished PDF — no signup, no watermark.</p></div>
