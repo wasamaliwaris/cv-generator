@@ -15,7 +15,7 @@ Build the production bundle with `npm run build`.
 
 - `/` — landing page
 - `/builder` — guided CV editor and live A4 preview
-- `/templates` — four original templates
+- `/templates` — ten original templates
 - `/profile` — reusable local career profile and backup controls
 - `/my-cvs` — locally saved CV versions and backup controls
 - `/cover-letter` — optional matching letter builder

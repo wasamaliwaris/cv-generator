@@ -1,6 +1,6 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Download, FileText, Lightbulb } from 'lucide-react';
-import { ACCENT_PALETTE, TEMPLATE_META, type CoverLetterData, type TemplateId } from './model';
+import { ACCENT_PALETTE, TEMPLATE_META, TEMPLATE_ORDER, type CoverLetterData, type TemplateId } from './model';
 import { useAppData } from './app-context';
 import { Button, Field, InlineNotice, SelectField, TextAreaField } from './ui';
 import { message } from './strings';
@@ -60,9 +60,7 @@ export function CoverLetterPage() {
   } }));
   const print = () => { try { window.print(); } catch { window.alert('The print dialog could not open. Try your browser’s print command.'); } };
   const applyTemplate = (templateId: TemplateId) => setData((current) => ({ ...current, coverLetter: { ...current.coverLetter, templateId } }));
-  const fields = useMemo(() => [
-    ['Clear', 'clear'], ['Modern', 'modern'], ['Compact', 'compact'], ['Editorial', 'editorial'],
-  ] as const, []);
+  const fields = useMemo(() => TEMPLATE_ORDER.map((id) => [TEMPLATE_META[id].name, id] as const), []);
 
   return <main className="page-width standard-page cover-letter-page"><div className="cover-letter-head"><div><div className="eyebrow">OPTIONAL, ALWAYS</div><h1>A letter that sounds like you.</h1><p>A matching cover letter is here if it helps. It is never required to create or download your CV.</p></div><span className={`save-status ${saveState}`}><span className="status-dot" />{saveState === 'saving' ? 'Saving…' : saveState === 'error' ? 'Save issue' : 'Saved locally'}</span></div>
     <InlineNotice tone="info">This draft is stored only in this browser. Your profile contact details appear in the preview; the letter text is yours to write.</InlineNotice>
