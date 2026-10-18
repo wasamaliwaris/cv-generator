@@ -4,7 +4,7 @@ import { BuilderPage } from './builder';
 import { CoverLetterPage } from './cover-letter';
 import { ExpressPage } from './express';
 import { LandingPage } from './landing';
-import { AboutPage, ContactPage, HelpPage, MyCVsPage, PrivacyPage, ProfilePage, TemplatesPage } from './pages';
+import { AboutPage, ContactPage, HelpPage, MyCVsPage, PrivacyPage, ProfilePage, TemplatesPage, TermsPage } from './pages';
 import { ArticlePage, ResourcesPage } from './resources';
 import { Footer, SiteHeader } from './ui';
 
@@ -23,6 +23,7 @@ function AppShell() {
     <Route path="/cover-letter" element={<CoverLetterPage />} />
     <Route path="/help" element={<HelpPage />} />
     <Route path="/privacy" element={<PrivacyPage />} />
+    <Route path="/terms" element={<TermsPage />} />
     <Route path="/about" element={<AboutPage />} />
     <Route path="/contact" element={<ContactPage />} />
     <Route path="/resources" element={<ResourcesPage />} />

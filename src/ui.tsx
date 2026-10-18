@@ -52,7 +52,7 @@ export function Footer() {
           <div className="footer-col"><strong>Build</strong><Link to="/builder">CV builder</Link><Link to="/express">Express mode</Link><Link to="/templates">{message('nav').templates}</Link><Link to="/cover-letter">{message('footer').coverLetter}</Link></div>
           <div className="footer-col"><strong>Workspace</strong><Link to="/my-cvs">{message('footer').savedCvs}</Link><Link to="/profile">{message('footer').profile}</Link><Link to="/help">Export &amp; backup</Link></div>
           <div className="footer-col"><strong>Resources</strong><Link to="/#how-it-works">{message('nav').howItWorks}</Link><Link to="/resources">Guides &amp; articles</Link><Link to="/help">{message('nav').help}</Link><Link to="/privacy">{message('footer').privacy}</Link></div>
-          <div className="footer-col"><strong>Company</strong><Link to="/about">About us</Link><Link to="/contact">Contact</Link></div>
+          <div className="footer-col"><strong>Company</strong><Link to="/about">About us</Link><Link to="/contact">Contact</Link><Link to="/terms">Terms of use</Link></div>
         </nav>
       </div>
       <div className="page-width footer-bottom"><span>© {new Date().getFullYear()} PathCV</span><span className="footer-note">Free to build. Yours to keep.</span></div>

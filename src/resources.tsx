@@ -3,6 +3,8 @@ import { Link, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, BookOpen, Clock3 } from 'lucide-react';
 import { ARTICLES_A } from './articles-1';
 import { ARTICLES_B } from './articles-2';
+import { ARTICLES_C } from './articles-3';
+import { ARTICLES_D } from './articles-4';
 import { Reveal } from './reveal';
 import { BackLink, PageHeading, usePageTitle } from './ui';
 
@@ -25,7 +27,7 @@ export interface Article {
   closing: string[];
 }
 
-export const ARTICLES: Article[] = [...ARTICLES_A, ...ARTICLES_B];
+export const ARTICLES: Article[] = [...ARTICLES_A, ...ARTICLES_B, ...ARTICLES_C, ...ARTICLES_D];
 export const ARTICLE_CATEGORIES = ['All', ...Array.from(new Set(ARTICLES.map((article) => article.category)))];
 
 export function getArticle(slug: string | undefined): Article | undefined {
