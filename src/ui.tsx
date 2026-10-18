@@ -29,6 +29,7 @@ export function SiteHeader() {
         <nav className={`main-nav ${open ? 'main-nav-open' : ''}`} aria-label="Main navigation">
           <NavLink to="/#how-it-works" end onClick={close}>{message('nav').howItWorks}</NavLink>
           <NavLink to="/templates" onClick={close}>{message('nav').templates}</NavLink>
+          <NavLink to="/resources" onClick={close}>Resources</NavLink>
           <NavLink to="/my-cvs" onClick={close}>My CVs</NavLink>
           <NavLink to="/help" onClick={close}>{message('nav').help}</NavLink>
           <Link to="/builder" className="button button-primary nav-cta" onClick={close}>{message('nav').createMyCv} <ArrowRight size={16} /></Link>
@@ -50,7 +51,8 @@ export function Footer() {
         <nav className="footer-grid" aria-label="Footer navigation">
           <div className="footer-col"><strong>Build</strong><Link to="/builder">CV builder</Link><Link to="/express">Express mode</Link><Link to="/templates">{message('nav').templates}</Link><Link to="/cover-letter">{message('footer').coverLetter}</Link></div>
           <div className="footer-col"><strong>Workspace</strong><Link to="/my-cvs">{message('footer').savedCvs}</Link><Link to="/profile">{message('footer').profile}</Link><Link to="/help">Export &amp; backup</Link></div>
-          <div className="footer-col"><strong>Resources</strong><Link to="/#how-it-works">{message('nav').howItWorks}</Link><Link to="/help">{message('nav').help}</Link><Link to="/privacy">{message('footer').privacy}</Link><Link to="/help#contact">Contact <span className="coming-tag">coming later</span></Link></div>
+          <div className="footer-col"><strong>Resources</strong><Link to="/#how-it-works">{message('nav').howItWorks}</Link><Link to="/resources">Guides &amp; articles</Link><Link to="/help">{message('nav').help}</Link><Link to="/privacy">{message('footer').privacy}</Link></div>
+          <div className="footer-col"><strong>Company</strong><Link to="/about">About us</Link><Link to="/contact">Contact</Link></div>
         </nav>
       </div>
       <div className="page-width footer-bottom"><span>© {new Date().getFullYear()} PathCV</span><span className="footer-note">Free to build. Yours to keep.</span></div>
@@ -114,6 +116,15 @@ export function InlineNotice({ children, tone = 'info' }: { children: React.Reac
 
 export function BackLink({ to, children }: { to: string; children: React.ReactNode }) {
   return <Link to={to} className="back-link">← {children}</Link>;
+}
+
+const DEFAULT_PAGE_TITLE = 'PathCV — A CV that moves with you';
+
+export function usePageTitle(title: string) {
+  useEffect(() => {
+    document.title = title;
+    return () => { document.title = DEFAULT_PAGE_TITLE; };
+  }, [title]);
 }
 
 export function ScoreRing({ score, size = 44 }: { score: number; size?: number }) {
