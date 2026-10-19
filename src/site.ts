@@ -1,3 +1,4 @@
-/* Public site details. Replace the contact inbox with a real monitored address before launch. */
-export const CONTACT_EMAIL = 'hello@pathcv.app';
+/* Public site details. */
+export const CONTACT_EMAIL = 'wasamaliwaris@gmail.com';
+export const CONTACT_PHONE = '+923095372673';
 export const SITE_NAME = 'PathCV';

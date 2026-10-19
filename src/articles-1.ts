@@ -131,6 +131,27 @@ export const ARTICLES_A: Article[] = [
           'To expand a resume into a CV: restore the full chronology, add every qualification, publication, talk, award, and project with dates, and organize with clear headings so length never becomes confusion.',
         ],
       },
+      {
+        heading: 'Regional formats at a glance',
+        paragraphs: [
+          'Expectations shift by market. The broad pattern across major hiring regions:',
+        ],
+        bullets: [
+          'United States and Canada: \u201cresume,\u201d one page (two max), no photo, no date of birth, city only for location.',
+          'UK and Ireland: \u201cCV,\u201d two pages standard, no photo, brief personal profile at the top.',
+          'Continental Europe: \u201cCV,\u201d one to two pages; the Europass format is common for EU institutions and cross-border roles.',
+          'Gulf and Middle East: \u201cCV,\u201d one to two pages; photos and nationality or visa status are commonly included.',
+          'South Asia: \u201cCV\u201d or \u201cresume\u201d interchangeably, one to two pages; photos common in some sectors, rare in tech.',
+        ],
+        tip: 'When a market\u2019s norms are unclear, mirror the job post: its requested sections outrank any general rule.',
+      },
+      {
+        heading: 'Should you keep both documents?',
+        paragraphs: [
+          'Yes \u2014 but think of them as two views of one record. Maintain a private master file with everything: every role, date, project, and achievement, untrimmed. Then derive each application version from it by cutting, never by inventing.',
+          'This is also the easiest way to stay honest: when every tailored version traces back to one complete record, dates and titles stay consistent everywhere, and background checks hold no surprises.',
+        ],
+      },
     ],
     closing: [
       'Call it whatever your market calls it — what gets you interviewed is a clear, tailored, honest document. Start with the short version, keep the full record for yourself, and you will be ready for either request.',

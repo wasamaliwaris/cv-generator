@@ -127,6 +127,36 @@ export const ARTICLES_D: Article[] = [
           'Before: “Was part of a website project.” After: “Coordinated a four-person team to relaunch the company site six weeks early.”',
         ],
       },
+      {
+        heading: 'Weak verbs and stronger swaps',
+        paragraphs: [
+          'Some verbs are not wrong, just weak: they describe presence rather than action. When you spot one opening a bullet, swap it for a verb that names what you actually did. Keep this translation table beside you while editing:',
+        ],
+        bullets: [
+          '\u201cResponsible for\u201d \u2192 Owned, Led, Managed, or Delivered \u2014 pick the one that matches your real authority.',
+          '\u201cHelped\u201d \u2192 Resolved, Supported, Trained, or Onboarded \u2014 say how you helped.',
+          '\u201cWorked on\u201d \u2192 Built, Developed, Shipped, or Maintained \u2014 name the output.',
+          '\u201cAssisted\u201d \u2192 Advised, Facilitated, Coordinated, or Partnered \u2014 show the relationship.',
+          '\u201cHandled\u201d \u2192 Oversaw, Negotiated, Streamlined, or Administered \u2014 match the scale.',
+          '\u201cMade\u201d \u2192 Created, Designed, Launched, or Produced \u2014 credit the creation.',
+          '\u201cGot\u201d \u2192 Earned, Achieved, Secured, or Exceeded \u2014 results deserve strong verbs too.',
+          '\u201cUsed\u201d \u2192 Leveraged, Automated, Operated, or Applied \u2014 tools are wielded, not just used.',
+        ],
+        tip: 'If no stronger verb fits, the bullet may be hiding thin substance. Either find the real achievement or cut the line.',
+      },
+      {
+        heading: 'A 10-minute bullet audit',
+        paragraphs: [
+          'Set a timer and run every bullet through these five checks. Most CVs lose a third of their words here \u2014 and read twice as strong after:',
+        ],
+        bullets: [
+          'Minutes 0\u20132: Read down the left margin only. Every bullet must open with a precise verb; rewrite any that open with \u201cresponsible,\u201d \u201chelped,\u201d or \u201cworked.\u201d',
+          'Minutes 2\u20135: Circle repeated opening verbs. No verb may appear twice \u2014 raid the bank above for alternatives.',
+          'Minutes 5\u20137: Add one outcome per bullet: a number, a scale, a timeframe, or a before-and-after.',
+          'Minutes 7\u20139: Cut filler adverbs \u2014 \u201csuccessfully,\u201d \u201ceffectively,\u201d \u201cvarious.\u201d If the verb is strong, they add nothing.',
+          'Minute 9\u201310: Read each bullet aloud. If you stumble, shorten it. Bullets should be speakable in one breath.',
+        ],
+      },
     ],
     closing: [
       'Audit your CV\u2019s left margin today: every bullet should open with a precise verb, no repeats, each followed by proof. It is the fastest single upgrade most CVs can get.',

@@ -42,7 +42,7 @@ export function relatedArticles(article: Article, count = 3): Article[] {
 }
 
 function ArticleMeta({ article, light = false }: { article: Article; light?: boolean }) {
-  return <div className={`article-meta ${light ? 'article-meta-light' : ''}`}><span><BookOpen size={13} /> {article.category}</span><span><Clock3 size={13} /> {article.minutes} min read</span><span>Updated {article.updated}</span></div>;
+  return <div className={`article-meta ${light ? 'article-meta-light' : ''}`}><span>By PathCV Editorial Team</span><span><BookOpen size={13} /> {article.category}</span><span><Clock3 size={13} /> {article.minutes} min read</span><span>Updated {article.updated}</span></div>;
 }
 
 function ResourceCard({ article }: { article: Article }) {
