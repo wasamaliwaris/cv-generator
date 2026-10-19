@@ -60,6 +60,18 @@ export const ARTICLES_C: Article[] = [
           'The one exception is a career change or first job, where a single clause of direction helps: “…seeking a junior data role” or “…moving from teaching into training.” Even then, keep the emphasis on proof, not wishes.',
         ],
       },
+      {
+        heading: 'Summary rewrites, worked live',
+        paragraphs: [
+          'Watch the formula applied to three weak originals. Each rewrite keeps every true fact — and deletes everything that was not one:',
+        ],
+        bullets: [
+          'Before: “Hardworking individual seeking opportunities to grow.” After: “Retail associate with 3 years at high-volume stores; trained 6 new starters and never missed a close.” (Named the lane, added proof.)',
+          'Before: “Experienced professional with a proven track record of success in various industries.” After: “Warehouse supervisor with 7 years in FMCG; led a 25-person shift and cut picking errors by a fifth.” (Specified everything.)',
+          'Before: “Recent graduate, fast learner, team player.” After: “Biology graduate (2:1) with a final-year lab project on water testing; seeking junior lab technician roles.” (Direction plus evidence.)',
+        ],
+        tip: 'Test your rewrite by deleting your name from it. If it could still describe a stranger, it needs more specifics.',
+      },
     ],
     closing: [
       'Role, level, proof — in that order, in under four lines. Read it aloud: if it sounds like it could describe anyone, it describes no one. Rewrite until it could only be you.',
@@ -119,6 +131,26 @@ export const ARTICLES_C: Article[] = [
           'Either way, keep it compact: three to six lines total. If it runs longer, you are listing inventory instead of signaling fit — trim to what this application needs.',
         ],
       },
+      {
+        heading: 'Skills when you are changing fields',
+        paragraphs: [
+          'Career changers often undersell: they list only new-field skills and hide years of transferable strength. Do both. Keep one group for the target field’s tools (courses and projects count), and a second group translating old-field strengths into universal terms.',
+          'A teacher moving into training might list: “Corporate training: onboarding design, workshop facilitation” alongside “Transferable: public speaking (6 years), curriculum planning, assessment design.” Same facts, dual framing — the reader sees both the pivot and the foundation.',
+        ],
+        bullets: [
+          'Name the target field’s vocabulary for everything you legitimately hold — keyword searches reward it.',
+          'Translate, don’t apologize: “classroom management (30 pupils)” becomes “group facilitation and behavior management.”',
+          'Put the new-field group first, even if shorter — it signals direction, which is what changers are judged on.',
+        ],
+      },
+      {
+        heading: 'Rating your own levels honestly',
+        paragraphs: [
+          'Labels like beginner, intermediate, and advanced can help — but only when they mean something checkable. Tie each level to evidence: years used, size of project, or certification earned. “Python (4 years, production code)” tells the truth; “Python (expert)” invites a test you may not pass.',
+          'When unsure between two levels, choose the lower one. Underpromising and overdelivering in interviews beats the reverse every time — and hiring managers routinely tell us modesty here reads as seniority.',
+        ],
+        tip: 'Never use star ratings, percentages, or progress bars for skills. They carry no information and make every claim look decorative.',
+      },
     ],
     closing: [
       'Specific, grouped, honest, and mirrored to the post. A recruiter should be able to confirm your fit in one glance — and everything they glance at should survive an interview.',
@@ -177,6 +209,27 @@ export const ARTICLES_C: Article[] = [
         paragraphs: [
           'Not every pause needs a label. Gaps under three to four months, time between graduation and a first job, and contract-end pauses in freelance or seasonal work are all ordinary — drawing attention to them creates a question nobody was asking.',
           'Similarly, never explain a gap with complaints about former employers, however justified. “Left due to a toxic manager” raises doubts about you, not them. “Seeking a better-aligned role” says everything necessary.',
+        ],
+      },
+      {
+        heading: 'Rebuilding momentum after a long break',
+        paragraphs: [
+          'Breaks over two years raise one extra question: is this person still current? Answer it with a short burst of visible activity in the months before you apply — evidence beats assurances.',
+          'Pick two or three from this menu based on your field, complete them properly, and date them on your CV like any other entry. Recency plus completion closes the currency question completely.',
+        ],
+        bullets: [
+          'One recognized course or certificate in your field — finished, not enrolled.',
+          'One freelance or volunteer project with a real deliverable and a real stakeholder.',
+          'One public artifact: a write-up, a portfolio piece, a talk, or a maintained profile.',
+          'Two or three informational conversations with working professionals — ask what changed while you were away.',
+          'A skills refresh sprint: two weeks rebuilding fluency in your field’s core tools.',
+        ],
+      },
+      {
+        heading: 'References after a long break',
+        paragraphs: [
+          'Long gaps raise a practical worry: who vouches for you when recent managers are years away? Look wider than job titles. Freelance clients, volunteer coordinators, course tutors, and former colleagues all make strong referees — what matters is recent, specific knowledge of your work.',
+          'Ask permission before naming anyone, brief each referee on the role you want, and keep two or three ready with current contact details. A warm, prepared referee from two years ago beats a cold, surprised one from two months ago.',
         ],
       },
     ],
