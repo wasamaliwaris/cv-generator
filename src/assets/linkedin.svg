@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <title>LinkedIn</title>
+  <!-- Official-style badge: LinkedIn blue tile with white "in" mark (original geometric artwork). -->
+  <rect width="24" height="24" rx="5.5" fill="#0a66c2"/>
+  <g fill="#fff">
+    <circle cx="6.8" cy="6.6" r="2.1"/>
+    <rect x="5" y="9.8" width="3.6" height="9.2" rx="0.4"/>
+    <rect x="9.8" y="9.8" width="3.5" height="9.2"/>
+    <rect x="15.7" y="9.8" width="3.5" height="9.2"/>
+    <path d="M9.8 12.6v-1.2c0-1 .8-1.6 1.8-1.6h5.6c1 0 1.8.6 1.8 1.6v1.2c0 .5-.4.9-.9.9h-1v-1.9c0-.3-.2-.5-.5-.5h-4.4c-.3 0-.5.2-.5.5v1.9h-1c-.5 0-.9-.4-.9-.9z"/>
+  </g>
+</svg>

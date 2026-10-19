@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { AlertCircle, ArrowRight, Check, CheckCircle2, ChevronDown, Info, Linkedin, Menu, TriangleAlert, X } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { AlertCircle, ArrowRight, Check, CheckCircle2, ChevronDown, Info, Menu, TriangleAlert, X } from 'lucide-react';
 import { message } from './strings';
 import { SOCIAL_FACEBOOK, SOCIAL_INSTAGRAM, SOCIAL_LINKEDIN, SOCIAL_WHATSAPP } from './site';
 import facebookIcon from './assets/facebook.svg';
 import instagramIcon from './assets/instagram.svg';
+import linkedinIcon from './assets/linkedin.svg';
 import whatsappIcon from './assets/whatsapp.svg';
 
 export function Button({ children, className = '', variant = 'primary', ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' | 'danger' }) {
@@ -46,15 +46,15 @@ export function SiteHeader() {
 }
 
 export function SocialLinks({ className = '' }: { className?: string }) {
-  const links: { href: string; label: string; cls: string; Icon?: LucideIcon; img?: string }[] = [
+  const links: { href: string; label: string; cls: string; img: string }[] = [
     { href: SOCIAL_FACEBOOK, label: 'Facebook', cls: 'is-facebook', img: facebookIcon },
     { href: SOCIAL_INSTAGRAM, label: 'Instagram', cls: 'is-instagram', img: instagramIcon },
-    { href: SOCIAL_LINKEDIN, label: 'LinkedIn', cls: 'is-linkedin', Icon: Linkedin },
+    { href: SOCIAL_LINKEDIN, label: 'LinkedIn', cls: 'is-linkedin', img: linkedinIcon },
     { href: SOCIAL_WHATSAPP, label: 'WhatsApp', cls: 'is-whatsapp', img: whatsappIcon },
   ];
   return (
     <div className={`social-links${className ? ` ${className}` : ''}`}>
-      {links.map(({ href, label, cls, Icon, img }) => <a key={label} className={`social-link ${cls}`} href={href} target="_blank" rel="me noopener noreferrer" aria-label={`PathCV on ${label}`} title={label}>{img ? <img src={img} alt="" aria-hidden="true" /> : Icon ? <Icon size={18} /> : null}</a>)}
+      {links.map(({ href, label, cls, img }) => <a key={label} className={`social-link ${cls}`} href={href} target="_blank" rel="me noopener noreferrer" aria-label={`PathCV on ${label}`} title={label}><img src={img} alt="" aria-hidden="true" /></a>)}
     </div>
   );
 }
