@@ -2846,3 +2846,14 @@ html { scrollbar-color: #8fb3a6 transparent; }
 .footer-social { margin-top: 14px; }
 .about-connect { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 2px 0 0; color: var(--ink-soft); }
 .contact-card .social-links { margin-top: 12px; }
+
+
+/* ================= Social brand colors ================= */
+.social-link.is-facebook { background: #1877f2; border-color: #1877f2; color: #fff; }
+.social-link.is-facebook:hover { background: #1463cc; border-color: #1463cc; color: #fff; transform: translateY(-2px); }
+.social-link.is-linkedin { background: #0a66c2; border-color: #0a66c2; color: #fff; }
+.social-link.is-linkedin:hover { background: #084e96; border-color: #084e96; color: #fff; transform: translateY(-2px); }
+.social-link.is-whatsapp { background: #25d366; border-color: #25d366; color: #fff; }
+.social-link.is-whatsapp:hover { background: #1eb857; border-color: #1eb857; color: #fff; transform: translateY(-2px); }
+.social-link.is-instagram { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); border-color: transparent; color: #fff; }
+.social-link.is-instagram:hover { border-color: transparent; color: #fff; transform: translateY(-2px); filter: saturate(1.1) brightness(.96); }

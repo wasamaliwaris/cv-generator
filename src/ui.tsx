@@ -43,14 +43,14 @@ export function SiteHeader() {
 
 export function SocialLinks({ className = '' }: { className?: string }) {
   const links = [
-    { href: SOCIAL_FACEBOOK, label: 'Facebook', Icon: Facebook },
-    { href: SOCIAL_INSTAGRAM, label: 'Instagram', Icon: Instagram },
-    { href: SOCIAL_LINKEDIN, label: 'LinkedIn', Icon: Linkedin },
-    { href: SOCIAL_WHATSAPP, label: 'WhatsApp', Icon: MessageCircle },
+    { href: SOCIAL_FACEBOOK, label: 'Facebook', Icon: Facebook, cls: 'is-facebook' },
+    { href: SOCIAL_INSTAGRAM, label: 'Instagram', Icon: Instagram, cls: 'is-instagram' },
+    { href: SOCIAL_LINKEDIN, label: 'LinkedIn', Icon: Linkedin, cls: 'is-linkedin' },
+    { href: SOCIAL_WHATSAPP, label: 'WhatsApp', Icon: MessageCircle, cls: 'is-whatsapp' },
   ];
   return (
     <div className={`social-links${className ? ` ${className}` : ''}`}>
-      {links.map(({ href, label, Icon }) => <a key={label} className="social-link" href={href} target="_blank" rel="me noopener noreferrer" aria-label={`PathCV on ${label}`} title={label}><Icon size={18} /></a>)}
+      {links.map(({ href, label, Icon, cls }) => <a key={label} className={`social-link ${cls}`} href={href} target="_blank" rel="me noopener noreferrer" aria-label={`PathCV on ${label}`} title={label}><Icon size={18} /></a>)}
     </div>
   );
 }
