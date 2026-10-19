@@ -229,6 +229,20 @@ export const ARTICLES_A: Article[] = [
           'Stale CVs show: an “objective” from 2019, a portfolio link that 404s, a phone number you no longer answer. Before every application round, click every link, confirm every number, and update your most recent role. A CV is a living document — treat it like one.',
         ],
       },
+      {
+        heading: 'Bonus: the 5-minute pre-send ritual',
+        paragraphs: [
+          'Fixes applied? Run this final ritual before every single application. Five minutes now prevents the small errors that undo good work:',
+        ],
+        bullets: [
+          'Read the whole CV aloud once — stumbles reveal typos, repetition, and wordy bullets spellcheck cannot catch.',
+          'Click every link: portfolio, LinkedIn, email. One dead link suggests the whole document is stale.',
+          'Check the file name: “Your-Name-CV.pdf” — never “CV_final_v7.pdf.”',
+          'Confirm the tailoring: does the summary’s first line echo this specific role? Is the most relevant bullet first under each job?',
+          'Get one second pair of eyes — a friend, a mentor, anyone unfamiliar. Familiarity makes your own errors invisible.',
+          'Re-read the job post once more. If it names a requirement you hold but never mention, add it now.',
+        ],
+      },
     ],
     closing: [
       'Fix these ten and you have handled the large majority of what goes wrong in CVs. The remaining work — tailoring, targeting, following up — is where applications are actually won.',

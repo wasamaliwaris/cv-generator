@@ -2829,3 +2829,11 @@ html { scrollbar-color: #8fb3a6 transparent; }
 .combo-option mark { background: none; color: var(--teal-dark); font-weight: 800; }
 .combo-option.active { background: var(--teal-soft); color: var(--ink); }
 .combo-option.combo-empty { cursor: default; color: var(--faint); font-size: 12.5px; }
+
+
+/* ================= Phase 10: article visuals ================= */
+.resource-card { overflow: hidden; }
+.resource-art { display: block; margin: -26px -24px 6px; }
+.resource-art svg { display: block; width: 100%; height: auto; }
+.article-hero-art { margin: 26px 0 0; border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--line); max-width: 78ch; box-shadow: var(--shadow-sm); }
+.article-hero-art svg { display: block; width: 100%; height: auto; }

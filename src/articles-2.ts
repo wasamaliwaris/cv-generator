@@ -65,6 +65,20 @@ export const ARTICLES_B: Article[] = [
           'Before you send, verify: the right company and role names, one page maximum, your phone and email present and correct, no typos (read it aloud), and a file name like “Maya-Rahman-Cover-Letter.pdf.” Then tailor the proof paragraph per application — it is the highest-leverage minute you will spend.',
         ],
       },
+      {
+        heading: 'Cover letters for tricky situations',
+        paragraphs: [
+          'Standard advice assumes a straightforward path. When yours bends, bend the letter with it — honestly and briefly:',
+        ],
+        bullets: [
+          'Career changers: name the switch in paragraph one, then translate two achievements into the new field’s language. Show the bridge, don’t just declare the destination.',
+          'Employment gaps: one factual clause — “after two years of full-time caregiving” — then forward. Confidence here reads as professionalism.',
+          'No experience: lead with education and projects, and let genuine enthusiasm for this specific company carry the motivation paragraph.',
+          'Internal moves: skip the company research (you live it) and focus on what you have delivered in your current seat plus why the new team fits.',
+          'Overqualified applicants: address it head-on — name what draws you to this specific role so they stop guessing.',
+        ],
+        tip: 'Tricky situations need shorter letters, not longer ones. Explain in a clause, prove in a paragraph, and move on.',
+      },
     ],
     closing: [
       'Short, specific, and researched beats long, generic, and effusive every time. Write the four paragraphs, cut a third of the words, and send it.',

@@ -60,6 +60,26 @@ export const ARTICLES_D: Article[] = [
           'Forget page-count dogma and run this check instead: hand the CV to a friend for thirty seconds, take it back, and ask what you do and why you are good at it. If they answer correctly, your length is right whatever the page count. If they cannot, the problem is almost never length — it is clarity.',
         ],
       },
+      {
+        heading: 'Length myths, debunked',
+        paragraphs: [
+          'Length advice attracts dogma. Here is what the evidence and recruiter surveys actually support:',
+        ],
+        bullets: [
+          '“Recruiters spend 6 seconds” — the famous eye-tracking figure measured first impressions, not total reading. A strong first screen earns a full read; length is rarely the reason it ends.',
+          '“Always one page” — sensible under five years of experience, but forcing senior careers onto one page produces cramped, tiny-font documents nobody finishes.',
+          '“More pages looks more impressive” — padding is transparent. Two thin pages lose to one dense page every time.',
+          '“Tiny fonts fix length” — shrinking below 10pt doesn’t save space, it surrenders readability. Cut words instead of pixels.',
+          '“Page two is never read” — page two is read when page one earns it. Front-load proof, and length stops mattering.',
+        ],
+      },
+      {
+        heading: 'What if they ask for a “detailed CV”?',
+        paragraphs: [
+          'Some posts — common in academia, engineering consultancies, and Gulf-region hiring — explicitly request detail. Honor the request, but stay disciplined: expand project descriptions and responsibilities, not adjectives. Add a “selected projects” appendix rather than bloating every role.',
+          'Even detailed CVs obey the hierarchy rule: page one must still carry the hire-or-not decision alone. Treat extra pages as supporting evidence for readers who want depth, and keep the front page as sharp as any one-pager.',
+        ],
+      },
     ],
     closing: [
       'One page for most, two when the substance demands it, completeness for academia. Match length to evidence, front-load the proof, and cut everything the hiring decision does not need.',
@@ -214,6 +234,27 @@ export const ARTICLES_D: Article[] = [
         paragraphs: [
           'If the post gave a timeline, respect it. Otherwise wait seven to ten days, then send one short follow-up in the same thread: restate your interest in two lines, add one new proof point if you have one, and close warmly. Then stop — a second chase rarely helps and often irritates.',
           'No reply after that is itself an answer. Log it, keep applying elsewhere, and reuse the tailored materials: every application makes the next one faster.',
+        ],
+      },
+      {
+        heading: 'Emailing recruiters and referrals',
+        paragraphs: [
+          'Cold applications follow the rules above. Warm outreach — recruiters, referrals, networking contacts — plays by slightly different ones, because a human relationship is already in play.',
+          'For recruiters: lead with your lane and availability (“Backend developer, 4 years Python, open to remote roles”), attach the CV unasked, and keep it to five lines — recruiters triage fast and appreciate brevity that respects their workflow.',
+        ],
+        bullets: [
+          'Referrals: name the mutual contact in the subject and first line; mention one specific reason this company interests you.',
+          'Networking contacts: ask for advice, not jobs (“15 minutes on breaking into UX research?”) — jobs follow conversations, not requests.',
+          'Second follow-ups: only with genuinely new information — a new project, a new referral, a changed timeline. Never “just checking in” twice.',
+          'Thank-yous: send within a day of any help received. Gratitude is the cheapest network maintenance there is.',
+        ],
+        tip: 'Warm emails can be shorter than cold ones — the relationship carries context the application email must build from scratch.',
+      },
+      {
+        heading: 'Portal and email: which wins?',
+        paragraphs: [
+          'When a post offers both an application portal and an email address, the portal wins — it feeds the tracking system everything else bypasses. Apply there first, completely, then use email only if invited (“questions to…”) or for a genuine follow-up later.',
+          'Never double-apply through both channels hoping one sticks. Duplicate applications create confusion and extra work for the hiring team — a poor first impression before they have even read your name.',
         ],
       },
     ],
