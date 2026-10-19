@@ -122,6 +122,33 @@ export const ARTICLES_B: Article[] = [
           'Skip photos, graphics, and proficiency bars. Nobody ever got hired for a five-star JavaScript icon, and parsers often mangle visual elements. Let the content carry the weight.',
         ],
       },
+      {
+        heading: 'Open source and community signals',
+        paragraphs: [
+          'Hiring managers trust public proof. Even modest open-source activity \u2014 a merged pull request, maintained docs, a thoughtful bug report \u2014 shows you can read other people\u2019s code and collaborate with strangers, which is most of professional engineering.',
+          'You do not need a famous repository. A short write-up of something you debugged, a Stack Overflow answer that earned votes, or slides from a small meetup talk all signal the same thing: this person communicates and finishes. Link the best two or three; leave the rest off.',
+        ],
+        bullets: [
+          'One merged contribution to a project you did not start \u2014 shows collaboration.',
+          'Docs or tests you wrote \u2014 shows you care about the next reader.',
+          'A short write-up of something you fixed \u2014 shows communication skill.',
+        ],
+      },
+      {
+        heading: 'What to cut from an engineering CV',
+        paragraphs: [
+          'Engineering CVs bloat in predictable ways. Cut ruthlessly \u2014 every weak line dilutes the strong ones around it:',
+        ],
+        bullets: [
+          'Objective statements \u2014 your target role belongs in the application, not the CV.',
+          'Full street address \u2014 city and country (or \u201cremote\u201d) is enough.',
+          'Outdated tech you never want to touch again \u2014 listing it invites questions about it.',
+          'Every online course \u2014 keep education to a line or two; nobody hires a certificate list.',
+          '\u201cReferences available on request\u201d \u2014 assumed, and a wasted line.',
+          'Photos, graphics, and skill bars \u2014 parsers mangle them and managers ignore them.',
+        ],
+        tip: 'If your CV runs past two pages, the problem is almost never experience \u2014 it is old roles and filler. Condense anything over five years old to a line each.',
+      },
     ],
     closing: [
       'Impact, depth, and working links: that is the engineering CV in six words. Write bullets you can defend in an interview, and the interview will come.',
@@ -185,6 +212,27 @@ export const ARTICLES_B: Article[] = [
           'Skills mirror the job post\u2019s terms for things you truly know.',
           'One page, consistent dates, zero typos — read aloud once.',
           'File named properly: “Your-Name-CV.pdf”, never “CV_final_v7.pdf”.',
+        ],
+      },
+      {
+        heading: 'Where to find your first roles',
+        paragraphs: [
+          'First jobs rarely come from cold applications alone. Spread your search across channels built for beginners, and treat every small win as CV material for the next application:',
+        ],
+        bullets: [
+          'Internships and apprenticeships \u2014 structured, often paid or credited, and designed for people with no history.',
+          'Volunteering that converts \u2014 charities and community groups frequently hire reliable volunteers first.',
+          'Freelance platforms and gig work \u2014 small paid projects become portfolio entries fast.',
+          'Referrals \u2014 tell everyone what you are looking for; most first jobs travel by word of mouth.',
+          'Campus and community boards \u2014 career centers and local groups hide less-competed listings.',
+        ],
+        tip: 'Apply in small batches and tailor each one. Ten thoughtful applications beat a hundred identical ones \u2014 especially when your CV is short and every line gets read.',
+      },
+      {
+        heading: 'Your cover letter carries more weight',
+        paragraphs: [
+          'When your CV is thin, your cover letter does extra duty: it explains your motivation, connects scattered experience to this specific role, and proves you can write. Hiring managers forgive a short CV far more easily when the letter shows genuine interest and clear thinking.',
+          'Keep it to three short paragraphs: why this role at this company, your two strongest proof points (projects, grades, volunteer wins), and a polite close with your contact details. Our cover letter guide walks through the structure with examples you can adapt.',
         ],
       },
     ],
