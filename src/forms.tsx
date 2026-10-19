@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { ArrowDown, ArrowUp, ChevronDown, Copy, Plus, Sparkles, Trash2, Upload, X } from 'lucide-react';
 import type { EducationEntry, LanguageEntry, MonthDate, OptionalSectionEntry, Profile, SectionKey, SkillCategory, WorkExperience } from './model';
 import { OPTIONAL_SECTION_KEYS, SECTION_LABELS, uid } from './model';
@@ -11,6 +11,79 @@ const countryCodes = [
   ['+81', 'Japan'], ['+82', 'South Korea'], ['+86', 'China'], ['+971', 'United Arab Emirates'], ['+966', 'Saudi Arabia'],
   ['+880', 'Bangladesh'], ['+55', 'Brazil'], ['+27', 'South Africa'], ['+353', 'Ireland'], ['+46', 'Sweden'], ['+41', 'Switzerland'],
 ];
+
+const COUNTRIES = [
+  'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Antigua and Barbuda', 'Argentina', 'Armenia', 'Australia', 'Austria',
+  'Azerbaijan', 'Bahamas', 'Bahrain', 'Bangladesh', 'Barbados', 'Belarus', 'Belgium', 'Belize', 'Benin', 'Bhutan',
+  'Bolivia', 'Bosnia and Herzegovina', 'Botswana', 'Brazil', 'Brunei', 'Bulgaria', 'Burkina Faso', 'Burundi', 'Cabo Verde', 'Cambodia',
+  'Cameroon', 'Canada', 'Central African Republic', 'Chad', 'Chile', 'China', 'Colombia', 'Comoros', 'Congo', 'Costa Rica',
+  'Croatia', 'Cuba', 'Cyprus', 'Czechia', 'Denmark', 'Djibouti', 'Dominica', 'Dominican Republic', 'Ecuador', 'Egypt',
+  'El Salvador', 'Equatorial Guinea', 'Eritrea', 'Estonia', 'Eswatini', 'Ethiopia', 'Fiji', 'Finland', 'France', 'Gabon',
+  'Gambia', 'Georgia', 'Germany', 'Ghana', 'Greece', 'Grenada', 'Guatemala', 'Guinea', 'Guinea-Bissau', 'Guyana',
+  'Haiti', 'Honduras', 'Hungary', 'Iceland', 'India', 'Indonesia', 'Iran', 'Iraq', 'Ireland', 'Israel',
+  'Italy', 'Jamaica', 'Japan', 'Jordan', 'Kazakhstan', 'Kenya', 'Kiribati', 'Kosovo', 'Kuwait', 'Kyrgyzstan',
+  'Laos', 'Latvia', 'Lebanon', 'Lesotho', 'Liberia', 'Libya', 'Liechtenstein', 'Lithuania', 'Luxembourg', 'Madagascar',
+  'Malawi', 'Malaysia', 'Maldives', 'Mali', 'Malta', 'Marshall Islands', 'Mauritania', 'Mauritius', 'Mexico', 'Micronesia',
+  'Moldova', 'Monaco', 'Mongolia', 'Montenegro', 'Morocco', 'Mozambique', 'Myanmar', 'Namibia', 'Nauru', 'Nepal',
+  'Netherlands', 'New Zealand', 'Nicaragua', 'Niger', 'Nigeria', 'North Korea', 'North Macedonia', 'Norway', 'Oman', 'Pakistan',
+  'Palau', 'Palestine', 'Panama', 'Papua New Guinea', 'Paraguay', 'Peru', 'Philippines', 'Poland', 'Portugal', 'Qatar',
+  'Romania', 'Russia', 'Rwanda', 'Saint Kitts and Nevis', 'Saint Lucia', 'Saint Vincent and the Grenadines', 'Samoa', 'San Marino', 'Sao Tome and Principe', 'Saudi Arabia',
+  'Senegal', 'Serbia', 'Seychelles', 'Sierra Leone', 'Singapore', 'Slovakia', 'Slovenia', 'Solomon Islands', 'Somalia', 'South Africa',
+  'South Korea', 'South Sudan', 'Spain', 'Sri Lanka', 'Sudan', 'Suriname', 'Sweden', 'Switzerland', 'Syria', 'Taiwan',
+  'Tajikistan', 'Tanzania', 'Thailand', 'Timor-Leste', 'Togo', 'Tonga', 'Trinidad and Tobago', 'Tunisia', 'Turkey', 'Turkmenistan',
+  'Tuvalu', 'Uganda', 'Ukraine', 'United Arab Emirates', 'United Kingdom', 'United States', 'Uruguay', 'Uzbekistan', 'Vanuatu', 'Vatican City',
+  'Venezuela', 'Vietnam', 'Yemen', 'Zambia', 'Zimbabwe',
+];
+
+function countryMatches(query: string): string[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  const starts: string[] = [];
+  const contains: string[] = [];
+  for (const name of COUNTRIES) {
+    const lower = name.toLowerCase();
+    if (lower.startsWith(q)) starts.push(name);
+    else if (lower.includes(q)) contains.push(name);
+  }
+  return [...starts, ...contains].slice(0, 9);
+}
+
+function HighlightedMatch({ name, query }: { name: string; query: string }) {
+  const index = name.toLowerCase().indexOf(query.toLowerCase());
+  if (!query || index < 0) return <>{name}</>;
+  return <>{name.slice(0, index)}<mark>{name.slice(index, index + query.length)}</mark>{name.slice(index + query.length)}</>;
+}
+
+export function CountryField({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+  const [open, setOpen] = useState(false);
+  const [highlight, setHighlight] = useState(0);
+  const listRef = useRef<HTMLUListElement>(null);
+  const rawId = useId();
+  const listId = `country-list-${rawId.replace(/[^a-zA-Z0-9]/g, '')}`;
+  const query = value.trim();
+  const matches = countryMatches(query);
+  const exact = matches.length === 1 && matches[0].toLowerCase() === query.toLowerCase();
+  const showList = open && query.length > 0 && !exact;
+  const safeHighlight = matches.length ? highlight % matches.length : 0;
+  useEffect(() => {
+    listRef.current?.children[safeHighlight]?.scrollIntoView({ block: 'nearest' });
+  }, [safeHighlight, showList]);
+  const select = (name: string) => { onChange(name); setOpen(false); };
+  return <label className="field"><span className="field-label">Country</span><span className="combo-wrap"><input
+    role="combobox" aria-expanded={showList} aria-controls={listId} aria-autocomplete="list"
+    aria-activedescendant={showList && matches[safeHighlight] ? `${listId}-${safeHighlight}` : undefined}
+    autoComplete="country-name" placeholder="Start typing — e.g. Pak" value={value}
+    onChange={(e) => { onChange(e.target.value); setOpen(true); setHighlight(0); }}
+    onFocus={() => setOpen(true)}
+    onBlur={() => setOpen(false)}
+    onKeyDown={(e) => {
+      if (e.key === 'ArrowDown' && matches.length) { e.preventDefault(); setOpen(true); setHighlight((h) => (h + 1) % matches.length); }
+      else if (e.key === 'ArrowUp' && matches.length) { e.preventDefault(); setOpen(true); setHighlight((h) => (h - 1 + matches.length) % matches.length); }
+      else if (e.key === 'Enter' && showList && matches[safeHighlight]) { e.preventDefault(); select(matches[safeHighlight]); }
+      else if (e.key === 'Escape') setOpen(false);
+    }}
+  />{showList && <ul ref={listRef} id={listId} role="listbox" aria-label="Matching countries" className="combo-list">{matches.length ? matches.map((name, i) => <li key={name} id={`${listId}-${i}`} role="option" aria-selected={i === safeHighlight} className={`combo-option ${i === safeHighlight ? 'active' : ''}`} onMouseDown={(e) => { e.preventDefault(); select(name); }} onMouseEnter={() => setHighlight(i)}><HighlightedMatch name={name} query={query} /></li>) : <li className="combo-option combo-empty" role="presentation">No matching country — your text will be kept as typed.</li>}</ul>}</span><span className="field-hint">Type two or three letters, then choose from the list.</span></label>;
+}
 
 export function DateFields({ label, value, onChange, error }: { label: string; value: MonthDate; onChange: (value: MonthDate) => void; error?: string }) {
   const [month, setMonth] = useState(value?.month ? String(value.month) : '');
@@ -60,7 +133,7 @@ export function PersonalFields({ profile, onChange }: { profile: Profile; onChan
       <div className="phone-field"><span className="field-label">Phone</span><div className="phone-input-row"><label className="sr-only" htmlFor="phone-code">Country calling code</label><select id="phone-code" aria-label="Country calling code" value={p.phoneCountryCode} onChange={(e) => set('phoneCountryCode', e.target.value)}><option value="">Code</option>{countryCodes.map(([code, name]) => <option key={code} value={code}>{code} · {name}</option>)}</select><input aria-label="Phone number" type="tel" autoComplete="tel-national" placeholder="Phone number" value={p.phone} onChange={(e) => set('phone', e.target.value)} /></div><span className="field-hint">Use the country calling code for your number.</span></div>
       <Field label="City" autoComplete="address-level2" value={p.city} onChange={(e) => set('city', e.target.value)} />
       <Field label="Region / state" autoComplete="address-level1" value={p.region} onChange={(e) => set('region', e.target.value)} />
-      <Field label="Country" autoComplete="country-name" value={p.country} onChange={(e) => set('country', e.target.value)} />
+      <CountryField value={p.country} onChange={(country) => set('country', country)} />
       <Field label="Postal code (optional)" autoComplete="postal-code" value={p.postalCode} onChange={(e) => set('postalCode', e.target.value)} />
       <Field label="Website" type="url" placeholder="yourwebsite.example" value={p.website} onChange={(e) => set('website', e.target.value)} />
       <Field label="LinkedIn" placeholder="linkedin.com/in/you" value={p.linkedin} onChange={(e) => set('linkedin', e.target.value)} />

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { AlertCircle, ArrowRight, Check, CheckCircle2, ChevronDown, Info, Menu, TriangleAlert, X } from 'lucide-react';
 import { message } from './strings';
 
@@ -32,6 +32,7 @@ export function SiteHeader() {
           <NavLink to="/resources" onClick={close}>Resources</NavLink>
           <NavLink to="/my-cvs" onClick={close}>My CVs</NavLink>
           <NavLink to="/help" onClick={close}>{message('nav').help}</NavLink>
+          <NavLink to="/about" onClick={close}>About</NavLink>
           <Link to="/builder" className="button button-primary nav-cta" onClick={close}>{message('nav').createMyCv} <ArrowRight size={16} /></Link>
         </nav>
       </div>
@@ -116,6 +117,14 @@ export function InlineNotice({ children, tone = 'info' }: { children: React.Reac
 
 export function BackLink({ to, children }: { to: string; children: React.ReactNode }) {
   return <Link to={to} className="back-link">← {children}</Link>;
+}
+
+export function HelpAboutTabs() {
+  const { pathname } = useLocation();
+  return <nav className="page-tabs" aria-label="Help and about">
+    <NavLink to="/help" className={pathname === '/help' ? 'active' : ''}>Help</NavLink>
+    <NavLink to="/about" className={pathname === '/about' ? 'active' : ''}>About</NavLink>
+  </nav>;
 }
 
 const DEFAULT_PAGE_TITLE = 'PathCV — A CV that moves with you';
