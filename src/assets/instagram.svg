@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_1" xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="1313.83 1313.83 1372.34 1372.34">
+  <!-- Cropped to artwork; gradient stops sampled from the original export (identical at icon size). -->
+  <defs>
+    <style>
+      .st0 {
+        fill: #fff;
+      }
+
+      .st1 {
+        fill: none;
+      }
+
+      .st2 {
+        clip-path: url(#clippath-1);
+      }
+
+      .st3 {
+        fill: url(#linear-gradient);
+      }
+
+      .st4 {
+        clip-path: url(#clippath);
+      }
+    </style>
+    <clipPath id="clippath">
+      <path class="st1" d="M2363.12,2686.17h-726.24c-178.41,0-323.05-144.64-323.05-323.05v-726.24c0-178.41,144.63-323.04,323.05-323.04h726.24c178.41,0,323.05,144.63,323.05,323.04v726.24c0,178.41-144.64,323.05-323.05,323.05Z"/>
+    </clipPath>
+    <clipPath id="clippath-1">
+      <path class="st1" d="M2363.12,2686.17h-726.24c-178.41,0-323.05-144.64-323.05-323.05v-726.24c0-178.41,144.63-323.04,323.05-323.04h726.24c178.41,0,323.05,144.63,323.05,323.04v726.24c0,178.41-144.64,323.05-323.05,323.05Z"/>
+    </clipPath>
+    <linearGradient id="linear-gradient" x1="1701.25" y1="2419.84" x2="1702.41" y2="2419.84" gradientTransform="translate(-4874306.5249 851464.2362) rotate(45) scale(1673.1419 -1673.1419)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4d0cd6"/>
+      <stop offset=".2" stop-color="#6a0cc1"/>
+      <stop offset=".4" stop-color="#980da2"/>
+      <stop offset=".5" stop-color="#ad0d93"/>
+      <stop offset=".6" stop-color="#c20d84"/>
+      <stop offset=".8" stop-color="#e90e69"/>
+      <stop offset="1" stop-color="#fe0e5a"/>
+    </linearGradient>
+  </defs>
+  <g class="st4">
+    <g class="st2">
+      <path class="st3" d="M2000,627.67L627.67,2000l1372.33,1372.33,1372.33-1372.33L2000,627.67Z"/>
+    </g>
+  </g>
+  <path class="st0" d="M1804.18,1621.99c-100.45,0-182.18,81.73-182.18,182.19v391.63c0,100.45,81.73,182.18,182.18,182.18h391.64c100.45,0,182.18-81.73,182.18-182.18v-391.63c0-100.46-81.73-182.19-182.18-182.19h-391.64ZM2195.82,2447.19h-391.64c-138.61,0-251.38-112.76-251.38-251.37v-391.63c0-138.61,112.77-251.38,251.38-251.38h391.64c138.61,0,251.37,112.77,251.37,251.38v391.63c0,138.61-112.76,251.37-251.37,251.37"/>
+  <path class="st0" d="M2000,1842.38c-86.9,0-157.61,70.71-157.61,157.61s70.71,157.61,157.61,157.61-70.7,157.61-157.61-70.7-157.61-157.61-157.61ZM2000,2226.79c-125.06,0-226.8-101.74-226.8-226.8s101.74-226.8,226.8-226.8,226.8,101.74,226.8,226.8-101.74,226.8-226.8,226.8"/>
+  <path class="st0" d="M2295.96,1774.26c0,30.43-24.67,55.1-55.1,55.1s-55.09-24.67-55.09-55.1,24.66-55.09,55.09-55.09,55.1,24.67,55.1,55.09"/>
+</svg>

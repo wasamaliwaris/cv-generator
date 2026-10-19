@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { AlertCircle, ArrowRight, Check, CheckCircle2, ChevronDown, Facebook, Info, Instagram, Linkedin, Menu, MessageCircle, TriangleAlert, X } from 'lucide-react';
+import { AlertCircle, ArrowRight, Check, CheckCircle2, ChevronDown, Info, Linkedin, Menu, TriangleAlert, X } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { message } from './strings';
 import { SOCIAL_FACEBOOK, SOCIAL_INSTAGRAM, SOCIAL_LINKEDIN, SOCIAL_WHATSAPP } from './site';
+import facebookIcon from './assets/facebook.svg';
+import instagramIcon from './assets/instagram.svg';
+import whatsappIcon from './assets/whatsapp.svg';
 
 export function Button({ children, className = '', variant = 'primary', ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' | 'danger' }) {
   return <button className={`button button-${variant} inline-flex items-center justify-center ${className}`} {...props}>{children}</button>;
@@ -42,15 +46,15 @@ export function SiteHeader() {
 }
 
 export function SocialLinks({ className = '' }: { className?: string }) {
-  const links = [
-    { href: SOCIAL_FACEBOOK, label: 'Facebook', Icon: Facebook, cls: 'is-facebook' },
-    { href: SOCIAL_INSTAGRAM, label: 'Instagram', Icon: Instagram, cls: 'is-instagram' },
-    { href: SOCIAL_LINKEDIN, label: 'LinkedIn', Icon: Linkedin, cls: 'is-linkedin' },
-    { href: SOCIAL_WHATSAPP, label: 'WhatsApp', Icon: MessageCircle, cls: 'is-whatsapp' },
+  const links: { href: string; label: string; cls: string; Icon?: LucideIcon; img?: string }[] = [
+    { href: SOCIAL_FACEBOOK, label: 'Facebook', cls: 'is-facebook', img: facebookIcon },
+    { href: SOCIAL_INSTAGRAM, label: 'Instagram', cls: 'is-instagram', img: instagramIcon },
+    { href: SOCIAL_LINKEDIN, label: 'LinkedIn', cls: 'is-linkedin', Icon: Linkedin },
+    { href: SOCIAL_WHATSAPP, label: 'WhatsApp', cls: 'is-whatsapp', img: whatsappIcon },
   ];
   return (
     <div className={`social-links${className ? ` ${className}` : ''}`}>
-      {links.map(({ href, label, Icon, cls }) => <a key={label} className={`social-link ${cls}`} href={href} target="_blank" rel="me noopener noreferrer" aria-label={`PathCV on ${label}`} title={label}><Icon size={18} /></a>)}
+      {links.map(({ href, label, cls, Icon, img }) => <a key={label} className={`social-link ${cls}`} href={href} target="_blank" rel="me noopener noreferrer" aria-label={`PathCV on ${label}`} title={label}>{img ? <img src={img} alt="" aria-hidden="true" /> : Icon ? <Icon size={18} /> : null}</a>)}
     </div>
   );
 }

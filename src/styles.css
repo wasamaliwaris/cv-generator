@@ -2857,3 +2857,8 @@ html { scrollbar-color: #8fb3a6 transparent; }
 .social-link.is-whatsapp:hover { background: #1eb857; border-color: #1eb857; color: #fff; transform: translateY(-2px); }
 .social-link.is-instagram { background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%); border-color: transparent; color: #fff; }
 .social-link.is-instagram:hover { border-color: transparent; color: #fff; transform: translateY(-2px); filter: saturate(1.1) brightness(.96); }
+
+
+/* ================= Custom social artwork ================= */
+.social-link { overflow: hidden; }
+.social-link img { width: 100%; height: 100%; object-fit: cover; display: block; }
