@@ -2837,3 +2837,12 @@ html { scrollbar-color: #8fb3a6 transparent; }
 .resource-art svg { display: block; width: 100%; height: auto; }
 .article-hero-art { margin: 26px 0 0; border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--line); max-width: 78ch; box-shadow: var(--shadow-sm); }
 .article-hero-art svg { display: block; width: 100%; height: auto; }
+
+
+/* ================= Social links ================= */
+.social-links { display: flex; gap: 10px; align-items: center; }
+.social-link { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-soft); transition: transform .15s ease, color .15s ease, border-color .15s ease; }
+.social-link:hover { color: var(--ink); border-color: var(--ink); transform: translateY(-1px); }
+.footer-social { margin-top: 14px; }
+.about-connect { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 2px 0 0; color: var(--ink-soft); }
+.contact-card .social-links { margin-top: 12px; }

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { AlertCircle, ArrowRight, Check, CheckCircle2, ChevronDown, Info, Menu, TriangleAlert, X } from 'lucide-react';
+import { AlertCircle, ArrowRight, Check, CheckCircle2, ChevronDown, Facebook, Info, Instagram, Linkedin, Menu, MessageCircle, TriangleAlert, X } from 'lucide-react';
 import { message } from './strings';
+import { SOCIAL_FACEBOOK, SOCIAL_INSTAGRAM, SOCIAL_LINKEDIN, SOCIAL_WHATSAPP } from './site';
 
 export function Button({ children, className = '', variant = 'primary', ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' | 'danger' }) {
   return <button className={`button button-${variant} inline-flex items-center justify-center ${className}`} {...props}>{children}</button>;
@@ -40,6 +41,20 @@ export function SiteHeader() {
   );
 }
 
+export function SocialLinks({ className = '' }: { className?: string }) {
+  const links = [
+    { href: SOCIAL_FACEBOOK, label: 'Facebook', Icon: Facebook },
+    { href: SOCIAL_INSTAGRAM, label: 'Instagram', Icon: Instagram },
+    { href: SOCIAL_LINKEDIN, label: 'LinkedIn', Icon: Linkedin },
+    { href: SOCIAL_WHATSAPP, label: 'WhatsApp', Icon: MessageCircle },
+  ];
+  return (
+    <div className={`social-links${className ? ` ${className}` : ''}`}>
+      {links.map(({ href, label, Icon }) => <a key={label} className="social-link" href={href} target="_blank" rel="me noopener noreferrer" aria-label={`PathCV on ${label}`} title={label}><Icon size={18} /></a>)}
+    </div>
+  );
+}
+
 export function Footer() {
   return (
     <footer className="site-footer">
@@ -48,6 +63,7 @@ export function Footer() {
           <Link to="/" className="brand"><span className="brand-mark" aria-hidden="true">P</span><span>Path<span className="brand-light">CV</span></span></Link>
           <p>Make your next step your own. Free forever — your data never leaves this device.</p>
           <div className="footer-badges"><span className="footer-badge">No signup</span><span className="footer-badge">No watermark</span><span className="footer-badge">Free PDF</span></div>
+          <SocialLinks className="footer-social" />
         </div>
         <nav className="footer-grid" aria-label="Footer navigation">
           <div className="footer-col"><strong>Build</strong><Link to="/builder">CV builder</Link><Link to="/express">Express mode</Link><Link to="/templates">{message('nav').templates}</Link><Link to="/cover-letter">{message('footer').coverLetter}</Link></div>
