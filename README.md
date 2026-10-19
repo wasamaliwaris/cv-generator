@@ -2,6 +2,8 @@
 
 A React + TypeScript + Tailwind CV builder with local-only persistence and a browser print-to-PDF workflow.
 
+The header toggle switches between light and dark themes. The choice is saved in `localStorage`; first-time visitors follow their OS preference. CV and cover-letter documents always preview and print on white paper in either theme.
+
 ## Run locally
 
 ```bash
