@@ -149,7 +149,7 @@ export function ExpressPage() {
           <p>Answer the essentials on one page. We will build your CV instantly — then you pick a design and download. First-timers and pros alike finish this in minutes.</p>
         </div>
         <div className="essentials-pill" aria-live="polite">
-          <span className="essentials-ring" style={{ background: `conic-gradient(var(--teal) 0 ${Math.round((essentials.done / essentials.total) * 100)}%, #e2ece7 0 100%)` }}>{essentials.done}/{essentials.total}</span>
+          <span className="essentials-ring" style={{ background: `conic-gradient(var(--teal) 0 ${Math.round((essentials.done / essentials.total) * 100)}%, var(--line) 0 100%)` }}>{essentials.done}/{essentials.total}</span>
           <span>essentials<br />complete</span>
         </div>
       </div>

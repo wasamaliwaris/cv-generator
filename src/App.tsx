@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes, Link } from 'react-router-dom';
 import { AppProvider } from './app-context';
+import { ThemeProvider } from './theme';
 import { BuilderPage } from './builder';
 import { CoverLetterPage } from './cover-letter';
 import { ExpressPage } from './express';
@@ -33,5 +34,5 @@ function AppShell() {
 }
 
 export default function App() {
-  return <AppProvider><BrowserRouter><AppShell /></BrowserRouter></AppProvider>;
+  return <AppProvider><ThemeProvider><BrowserRouter><AppShell /></BrowserRouter></ThemeProvider></AppProvider>;
 }

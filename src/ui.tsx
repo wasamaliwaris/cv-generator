@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { AlertCircle, ArrowRight, Check, CheckCircle2, ChevronDown, Info, Menu, TriangleAlert, X } from 'lucide-react';
 import { message } from './strings';
+import { ThemeToggle } from './theme';
 import { SOCIAL_FACEBOOK, SOCIAL_INSTAGRAM, SOCIAL_LINKEDIN, SOCIAL_WHATSAPP } from './site';
 import facebookIcon from './assets/facebook.svg';
 import instagramIcon from './assets/instagram.svg';
@@ -39,6 +40,7 @@ export function SiteHeader() {
           <NavLink to="/help" onClick={close}>{message('nav').help}</NavLink>
           <NavLink to="/about" onClick={close}>About</NavLink>
           <Link to="/builder" className="button button-primary nav-cta" onClick={close}>{message('nav').createMyCv} <ArrowRight size={16} /></Link>
+          <ThemeToggle />
         </nav>
       </div>
     </header>
