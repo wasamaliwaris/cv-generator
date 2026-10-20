@@ -3872,13 +3872,30 @@ html[data-theme="dark"] .about-facts-card strong,
 html[data-theme="dark"] .page-tabs a.active,
 html[data-theme="dark"] .combo-option mark { color: #5eead4; }
 html[data-theme="dark"] .hero-stat strong { color: #c9d8e2; }
-/* Gradient display type stays luminous on dark. */
+/* Gradient display type stays luminous on dark. The background shorthand resets
+   background-clip to border-box, so re-assert the text clip AFTER it —
+   otherwise the transparent glyphs vanish against the dark backdrop. */
 html[data-theme="dark"] .hero-copy h1 em,
 html[data-theme="dark"] .section-heading-row h2 em,
 html[data-theme="dark"] .faq-layout h2 em,
-html[data-theme="dark"] .express-head h1 em { background: linear-gradient(115deg, #2dd4a7 10%, #7fe3c3 60%, #2dd4a7 100%); }
-html[data-theme="dark"] .stat-item strong { background: linear-gradient(180deg, #fff, #a9e6cf); }
-html[data-theme="dark"] .site-header .brand-light { background: linear-gradient(120deg, #2dd4a7 20%, #7fe3c3 80%); }
+html[data-theme="dark"] .express-head h1 em {
+  background: linear-gradient(115deg, #2dd4a7 10%, #7fe3c3 60%, #2dd4a7 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+html[data-theme="dark"] .stat-item strong {
+  background: linear-gradient(180deg, #fff, #a9e6cf);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+html[data-theme="dark"] .site-header .brand-light {
+  background: linear-gradient(120deg, #2dd4a7 20%, #7fe3c3 80%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
 html[data-theme="dark"] .privacy-article li::marker, html[data-theme="dark"] .article-body li::marker { color: #2dd4a7; }
 /* Page glow tuned for the dark backdrop. */
 html[data-theme="dark"] body {
