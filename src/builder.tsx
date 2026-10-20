@@ -8,7 +8,7 @@ import { AdditionalSectionFields, EducationFields, LanguageFields, PersonalField
 import { TemplateMini } from './landing';
 import { ROLE_KITS, STEP_TIPS, profileFromKit } from './starters';
 import { copyText, downloadTextFile, profileToPlainText, scoreCV, scoreLabel } from './cv-utils';
-import { Button, Field, InlineNotice, ScoreRing, SelectField } from './ui';
+import { Button, Field, InlineNotice, ScoreRing, SelectField, usePageMeta } from './ui';
 import { CVPreview } from './cv-preview';
 import { message as t } from './strings';
 
@@ -49,6 +49,7 @@ function upsertDocument(doc: CVDocument, update: (callback: (current: import('./
 }
 
 export function BuilderPage() {
+  usePageMeta({ title: 'CV Builder \u2014 PathCV', description: 'Build a professional CV step by step with live preview, ten templates, and free PDF export. No signup \u2014 your data stays in your browser.', path: '/builder' });
   const { data, setData, saveState } = useAppData();
   const location = useLocation();
   const [draft, setDraft] = useState<CVDocument | null>(null);

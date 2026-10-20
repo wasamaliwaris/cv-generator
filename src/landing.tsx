@@ -4,6 +4,8 @@ import { TEMPLATE_META, TEMPLATE_ORDER, type TemplateId } from './model';
 import { useAppData } from './app-context';
 import { CountUp, Reveal } from './reveal';
 import { message } from './strings';
+import { SITE_URL } from './site';
+import { JsonLd, usePageMeta } from './ui';
 
 const features = [
   { icon: <BookmarkCheck size={20} />, title: 'A reusable profile', text: 'Keep the career details you use often in one local profile, ready for the next version.' },
@@ -58,10 +60,25 @@ export function TemplateMini({ id, fictional = false }: { id: TemplateId; fictio
   </div>;
 }
 
+const homeJsonLd = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    { '@type': 'WebSite', name: 'PathCV', url: SITE_URL },
+    { '@type': 'Organization', name: 'PathCV', url: SITE_URL, logo: `${SITE_URL}/icon-512.png`, sameAs: ['https://www.facebook.com/m.wasam.2025', 'https://www.instagram.com/its_wasam_ali', 'https://www.linkedin.com/in/muhammadwasam'] },
+    { '@type': 'FAQPage', mainEntity: [
+      { '@type': 'Question', name: 'Is PathCV really free?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Building, all ten templates, and the print-to-PDF flow are free. There is no paywall.' } },
+      { '@type': 'Question', name: 'Do I need an account?', acceptedAnswer: { '@type': 'Answer', text: 'No account is needed. Your information stays in this browser on this device.' } },
+      { '@type': 'Question', name: 'Does PathCV translate my CV?', acceptedAnswer: { '@type': 'Answer', text: 'No. The interface is prepared for future localization, but your CV content is not automatically translated.' } },
+      { '@type': 'Question', name: 'Will my CV pass every ATS?', acceptedAnswer: { '@type': 'Answer', text: 'No tool can guarantee that. The layouts are designed to be straightforward and readable, but outcomes vary.' } },
+    ] },
+  ],
+};
+
 export function LandingPage() {
   const { data } = useAppData();
   const latest = [...data.documents].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
-  return <main className="landing-page">
+  usePageMeta({ title: 'PathCV \u2014 A CV that moves with you', description: 'Build your CV free. Download the PDF free. No signup, no watermark, no catch.', path: '/' });
+  return <main className="landing-page"><JsonLd data={homeJsonLd} />
     <section className="hero-section">
       <div className="hero-glow" aria-hidden="true" />
       <div className="hero-orb hero-orb-a" aria-hidden="true" />
