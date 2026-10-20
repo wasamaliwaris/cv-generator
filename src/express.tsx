@@ -6,7 +6,7 @@ import { emptyProfile, isValidEmail, newDocument, uid } from './model';
 import { kitById, ROLE_KITS } from './starters';
 import { useAppData } from './app-context';
 import { DateFields } from './forms';
-import { BackLink, Button, Field, InlineNotice, TextAreaField } from './ui';
+import { BackLink, Button, Field, InlineNotice, TextAreaField, usePageMeta } from './ui';
 
 interface QuickJob {
   id: string;
@@ -35,6 +35,7 @@ function splitList(value: string): string[] {
 }
 
 export function ExpressPage() {
+  usePageMeta({ title: 'Express CV Maker: a CV in 2 Minutes \u2014 PathCV', description: 'Answer six quick steps and get a complete CV in about two minutes. Free templates and PDF export, no account needed.', path: '/express' });
   const { setData } = useAppData();
   const navigate = useNavigate();
   const [kitId, setKitId] = useState('');

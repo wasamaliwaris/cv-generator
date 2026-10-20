@@ -3924,3 +3924,10 @@ html[data-theme="dark"] .article-cta { background: linear-gradient(135deg, #0f2a
   .main-nav .theme-toggle { width: 100%; height: auto; display: flex; align-items: center; gap: 10px; margin: 8px 0 0; padding: 11px 14px; font-size: 14px; font-weight: 700; }
   .main-nav .theme-toggle-label { display: inline; }
 }
+
+/* ---------- Accessibility: skip link & lazy-route loader ---------- */
+.skip-link { position: absolute; left: 14px; top: -60px; z-index: 200; padding: 10px 18px; border-radius: 10px; background: var(--navy); color: #fff; font-size: 13px; font-weight: 700; text-decoration: none; transition: top 0.15s ease; }
+.skip-link:focus-visible { top: 12px; color: #fff; outline: 3px solid #2dd4a7; outline-offset: 2px; }
+.route-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; min-height: 46vh; color: var(--muted); font-size: 14px; }
+.route-spinner { width: 34px; height: 34px; border-radius: 50%; border: 3px solid var(--line); border-top-color: var(--teal); animation: route-spin 0.8s linear infinite; }
+@keyframes route-spin { to { transform: rotate(360deg); } }

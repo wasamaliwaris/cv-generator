@@ -7,7 +7,8 @@ import { ARTICLES_C } from './articles-3';
 import { ARTICLES_D } from './articles-4';
 import { ARTICLES_E } from './articles-5';
 import { Reveal } from './reveal';
-import { BackLink, PageHeading, usePageTitle } from './ui';
+import { BackLink, JsonLd, PageHeading, usePageMeta } from './ui';
+import { SITE_URL } from './site';
 
 export interface ArticleSection {
   heading: string;
@@ -71,7 +72,7 @@ function ResourceCard({ article }: { article: Article }) {
 }
 
 export function ResourcesPage() {
-  usePageTitle('Guides & articles — PathCV');
+  usePageMeta({ title: 'Guides & articles \u2014 PathCV', description: 'Sixteen free, in-depth guides on ATS tailoring, CV writing, cover letters, and job search. Practical, honest, no signup.', path: '/resources' });
   const [filter, setFilter] = useState('All');
   const [featured, ...rest] = ARTICLES;
   const visible = rest.filter((article) => filter === 'All' || article.category === filter);
@@ -88,13 +89,26 @@ export function ResourcesPage() {
 export function ArticlePage() {
   const { slug } = useParams();
   const article = getArticle(slug);
-  usePageTitle(article ? `${article.title} — PathCV Guides` : 'Guide not found — PathCV');
+  usePageMeta(article ? { title: `${article.title} \u2014 PathCV Guides`, description: article.excerpt, path: `/resources/${article.slug}` } : { title: 'Guide not found \u2014 PathCV', path: '/resources' });
   useEffect(() => { window.scrollTo(0, 0); }, [slug]);
   const related = useMemo(() => (article ? relatedArticles(article) : []), [article]);
+  const articleJsonLd = article ? {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: article.title,
+    description: article.excerpt,
+    author: { '@type': 'Organization', name: 'PathCV', url: SITE_URL },
+    publisher: { '@type': 'Organization', name: 'PathCV', logo: { '@type': 'ImageObject', url: `${SITE_URL}/icon-512.png` } },
+    datePublished: '2026-10-01',
+    dateModified: '2026-10-21',
+    mainEntityOfPage: `${SITE_URL}/resources/${article.slug}`,
+    image: `${SITE_URL}/og-image.png`,
+  } : null;
   if (!article) {
     return <main className="page-width standard-page article-page"><BackLink to="/resources">All guides & articles</BackLink><PageHeading eyebrow="NOT FOUND" title="That guide is not here." description="It may have moved. Browse the full collection instead." actions={<Link to="/resources" className="button button-primary">Browse guides</Link>} /></main>;
   }
   return <main className="page-width standard-page article-page">
+    {articleJsonLd && <JsonLd data={articleJsonLd} />}
     <BackLink to="/resources">All guides & articles</BackLink>
     <header className="article-header"><ArticleMeta article={article} /><h1>{article.title}</h1><p className="article-lede">{article.excerpt}</p></header>
     <div className="article-hero-art"><ArticleArt slug={article.slug} /></div>

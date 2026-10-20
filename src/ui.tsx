@@ -3,7 +3,7 @@ import { Link, NavLink, useLocation } from 'react-router-dom';
 import { AlertCircle, ArrowRight, Check, CheckCircle2, ChevronDown, Info, Menu, TriangleAlert, X } from 'lucide-react';
 import { message } from './strings';
 import { ThemeToggle } from './theme';
-import { SOCIAL_FACEBOOK, SOCIAL_INSTAGRAM, SOCIAL_LINKEDIN, SOCIAL_WHATSAPP } from './site';
+import { SITE_URL, SOCIAL_FACEBOOK, SOCIAL_INSTAGRAM, SOCIAL_LINKEDIN, SOCIAL_WHATSAPP } from './site';
 import facebookIcon from './assets/facebook.svg';
 import instagramIcon from './assets/instagram.svg';
 import linkedinIcon from './assets/linkedin.svg';
@@ -150,12 +150,59 @@ export function HelpAboutTabs() {
 }
 
 const DEFAULT_PAGE_TITLE = 'PathCV — A CV that moves with you';
+const DEFAULT_META_DESCRIPTION = 'Build your CV free. Download the PDF free. No signup, no watermark, no catch.';
 
 export function usePageTitle(title: string) {
+  usePageMeta({ title, path: '/' });
+}
+
+export function usePageMeta({ title, description, path }: { title: string; description?: string; path: string }) {
   useEffect(() => {
     document.title = title;
-    return () => { document.title = DEFAULT_PAGE_TITLE; };
-  }, [title]);
+    const meta = document.querySelector('meta[name="description"]');
+    const previousDescription = meta?.getAttribute('content') ?? DEFAULT_META_DESCRIPTION;
+    if (meta && description) meta.setAttribute('content', description);
+    let canonical = document.querySelector('link[rel="canonical"]');
+    let created = false;
+    if (!canonical) {
+      canonical = document.createElement('link');
+      canonical.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonical);
+      created = true;
+    }
+    const previousCanonical = canonical.getAttribute('href');
+    canonical.setAttribute('href', `${SITE_URL}${path}`);
+    return () => {
+      document.title = DEFAULT_PAGE_TITLE;
+      if (meta) meta.setAttribute('content', previousDescription);
+      if (created) canonical.remove();
+      else if (previousCanonical) canonical.setAttribute('href', previousCanonical);
+    };
+  }, [title, description, path]);
+}
+
+export function JsonLd({ data }: { data: Record<string, unknown> }) {
+  const serialized = JSON.stringify(data);
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.textContent = serialized;
+    document.head.appendChild(script);
+    return () => { script.remove(); };
+  }, [serialized]);
+  return null;
+}
+
+export function SkipLink() {
+  const jump = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
+    const main = document.querySelector('main');
+    if (main) {
+      if (!main.hasAttribute('tabindex')) main.setAttribute('tabindex', '-1');
+      (main as HTMLElement).focus({ preventScroll: false });
+    }
+  };
+  return <a href="#main-content" className="skip-link" onClick={jump}>Skip to content</a>;
 }
 
 export function ScoreRing({ score, size = 44 }: { score: number; size?: number }) {

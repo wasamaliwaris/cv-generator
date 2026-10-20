@@ -2,7 +2,7 @@ import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Download, FileText, Lightbulb } from 'lucide-react';
 import { ACCENT_PALETTE, TEMPLATE_META, TEMPLATE_ORDER, type CoverLetterData, type TemplateId } from './model';
 import { useAppData } from './app-context';
-import { Button, Field, InlineNotice, SelectField, TextAreaField } from './ui';
+import { Button, Field, InlineNotice, SelectField, TextAreaField, usePageMeta } from './ui';
 import { message } from './strings';
 
 function displayDate(value: string) {
@@ -49,6 +49,7 @@ function CoverLetterPreview({ letter, profile }: { letter: CoverLetterData; prof
 }
 
 export function CoverLetterPage() {
+  usePageMeta({ title: 'Free Cover Letter Builder \u2014 PathCV', description: 'Write a matching cover letter with live preview and free PDF export. Optional, editable, and never required.', path: '/cover-letter' });
   const { data, setData, saveState } = useAppData();
   const letter = data.coverLetter;
   const set = (key: 'recipient' | 'organization' | 'role' | 'date' | 'greeting' | 'opening' | 'body' | 'closing' | 'signature' | 'accentColor', value: string) => setData((current) => ({ ...current, coverLetter: { ...current.coverLetter, [key]: value } }));
