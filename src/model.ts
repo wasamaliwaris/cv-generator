@@ -42,6 +42,11 @@ export interface PersonalDetails {
   portfolio: string;
   otherLink: string;
   photoDataUrl: string;
+  presentAddress: string;
+  dateOfBirth: string;
+  maritalStatus: string;
+  nationality: string;
+  religion: string;
 }
 
 export interface WorkExperience {
@@ -223,7 +228,8 @@ export function emptyProfile(): Profile {
     personal: {
       firstName: '', lastName: '', headline: '', email: '', phone: '', phoneCountryCode: '',
       city: '', region: '', country: '', postalCode: '', website: '', linkedin: '', portfolio: '',
-      otherLink: '', photoDataUrl: '',
+      otherLink: '', photoDataUrl: '', presentAddress: '', dateOfBirth: '', maritalStatus: '',
+      nationality: '', religion: '',
     },
     summary: '',
     workExperience: [],
@@ -270,7 +276,8 @@ export function sampleProfile(): Profile {
       email: 'maya.rahman@example.com', phone: '555 014 8821', phoneCountryCode: '+1',
       city: 'Brooklyn', region: 'New York', country: 'United States', postalCode: '',
       website: 'maya-rahman.example', linkedin: 'linkedin.com/in/maya-rahman-example',
-      portfolio: '', otherLink: '', photoDataUrl: '',
+      portfolio: '', otherLink: '', photoDataUrl: '', presentAddress: '', dateOfBirth: '',
+      maritalStatus: '', nationality: '', religion: '',
     },
     summary: 'Curious product designer who turns complex workflows into calm, useful experiences. I work closely with research, engineering, and content partners to make thoughtful improvements from first sketch to launch.',
     workExperience: [

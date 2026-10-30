@@ -115,6 +115,15 @@ function SectionContent({ keyName, profile, doc }: { keyName: SectionKey; profil
   return <div>{rows.map((item) => <OptionalItem key={item.id} item={item} doc={doc} />)}</div>;
 }
 
+function formatBirthDate(value: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (!match) return value.trim();
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const month = Number(match[2]);
+  if (month < 1 || month > 12) return value.trim();
+  return `${Number(match[3])} ${months[month - 1]} ${match[1]}`;
+}
+
 export function CVPreview({ document: doc, showControls = true, onPageCount, paperId = 'printable-cv', printable = true }: { document: CVDocument; showControls?: boolean; onPageCount?: (pages: number) => void; paperId?: string; printable?: boolean }) {
   const paperRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -125,16 +134,25 @@ export function CVPreview({ document: doc, showControls = true, onPageCount, pap
   const profile = doc.profileSnapshot;
   const fullName = [profile.personal.firstName, profile.personal.lastName].filter(Boolean).join(' ') || 'Your name';
   const location = [profile.personal.city, profile.personal.region, profile.personal.country].filter(Boolean).join(', ');
+  const birthDate = formatBirthDate(profile.personal.dateOfBirth);
+  const personalLine = [
+    birthDate ? `Born ${birthDate}` : '',
+    profile.personal.maritalStatus.trim(),
+    profile.personal.nationality.trim(),
+    profile.personal.religion.trim(),
+  ].filter(Boolean).join(' \u00b7 ');
   const contacts = useMemo(() => [
     profile.personal.email && { label: profile.personal.email, href: `mailto:${profile.personal.email}` },
     profile.personal.phone.trim() && { label: [profile.personal.phoneCountryCode, profile.personal.phone].filter(Boolean).join(' '), href: `tel:${[profile.personal.phoneCountryCode, profile.personal.phone].filter(Boolean).join('')}` },
+    profile.personal.presentAddress.trim() && { label: profile.personal.presentAddress.trim() },
     location && { label: location },
     profile.personal.postalCode && { label: profile.personal.postalCode },
+    personalLine && { label: personalLine },
     profile.personal.website && { label: profile.personal.website.replace(/^https?:\/\//, ''), href: cleanUrl(profile.personal.website) },
     profile.personal.linkedin && { label: profile.personal.linkedin.replace(/^https?:\/\//, ''), href: cleanUrl(profile.personal.linkedin) },
     profile.personal.portfolio && { label: profile.personal.portfolio.replace(/^https?:\/\//, ''), href: cleanUrl(profile.personal.portfolio) },
     profile.personal.otherLink && { label: profile.personal.otherLink.replace(/^https?:\/\//, ''), href: cleanUrl(profile.personal.otherLink) },
-  ].filter(Boolean) as { label: string; href?: string }[], [profile.personal, location]);
+  ].filter(Boolean) as { label: string; href?: string }[], [profile.personal, location, personalLine]);
 
   useLayoutEffect(() => {
     const node = paperRef.current;

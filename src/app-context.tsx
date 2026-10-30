@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from '
 import type { AppData, Profile } from './model';
 import { loadAppData, normalizeAppData, persistAppData } from './storage';
 
-type SaveState = 'saved' | 'saving' | 'error';
+type SaveState = 'saved' | 'saving' | 'quota' | 'error';
 interface AppContextValue {
   data: AppData;
   setData: React.Dispatch<React.SetStateAction<AppData>>;
@@ -18,7 +18,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setSaveState('saving');
     const timer = window.setTimeout(() => {
-      setSaveState(persistAppData(data) ? 'saved' : 'error');
+      setSaveState(persistAppData(data));
     }, 260);
     return () => window.clearTimeout(timer);
   }, [data]);
