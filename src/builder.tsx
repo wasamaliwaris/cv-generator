@@ -59,6 +59,15 @@ export function BuilderPage() {
   const [past, setPast] = useState<CVDocument[]>([]);
   const [future, setFuture] = useState<CVDocument[]>([]);
   const [showPreview, setShowPreview] = useState(false);
+  const [previewVisible, setPreviewVisible] = useState<boolean>(() => {
+    try { return localStorage.getItem('pathcv-builder-preview') !== 'hidden'; } catch { return true; }
+  });
+  const togglePreview = () => {
+    setPreviewVisible((visible) => {
+      try { localStorage.setItem('pathcv-builder-preview', visible ? 'hidden' : 'shown'); } catch { /* storage unavailable */ }
+      return !visible;
+    });
+  };
   const [setupOpen, setSetupOpen] = useState(false);
   const [setup, setSetup] = useState<SetupState>({ purpose: 'General', targetRole: '', targetCountry: '', documentLanguage: 'English', dateFormat: 'month-year' });
   const [message, setMessage] = useState('');
@@ -188,10 +197,10 @@ export function BuilderPage() {
   const profile = draft.profileSnapshot;
   const saveLabel = saveState === 'saving' ? 'Saving…' : saveState === 'error' ? 'Save issue' : 'Saved';
 
-  return <div className={`builder-page ${showPreview ? 'builder-show-preview' : ''}`}>
+  return <div className={`builder-page ${showPreview ? 'builder-show-preview' : ''} ${previewVisible ? '' : 'builder-hide-preview'}`}>
     <div className="builder-topbar page-width">
       <div className="builder-doc-name"><FileText size={17} /><span>{draft.name || 'Untitled CV'}</span><span className={`save-status ${saveState}`}><span className="status-dot" />{saveLabel}</span></div>
-      <div className="builder-top-actions"><button type="button" className="builder-icon-action" disabled={past.length === 0} onClick={undo} aria-label="Undo last change" title="Undo"><RotateCcw size={16} /><span>Undo</span></button><button type="button" className="builder-icon-action" disabled={future.length === 0} onClick={redo} aria-label="Redo last change" title="Redo"><RotateCw size={16} /><span>Redo</span></button><Link className="builder-exit" to="/my-cvs">Save and exit <ArrowRight size={15} /></Link></div>
+      <div className="builder-top-actions"><button type="button" className="builder-icon-action preview-toggle" aria-pressed={previewVisible} title={previewVisible ? 'Hide the live CV preview' : 'Show the live CV preview'} onClick={togglePreview}>{previewVisible ? <EyeOff size={16} /> : <Eye size={16} />}<span>{previewVisible ? 'Hide' : 'Preview'}</span></button><button type="button" className="builder-icon-action" disabled={past.length === 0} onClick={undo} aria-label="Undo last change" title="Undo"><RotateCcw size={16} /><span>Undo</span></button><button type="button" className="builder-icon-action" disabled={future.length === 0} onClick={redo} aria-label="Redo last change" title="Redo"><RotateCw size={16} /><span>Redo</span></button><Link className="builder-exit" to="/my-cvs">Save and exit <ArrowRight size={15} /></Link></div>
     </div>
     <div className="builder-progress-wrap"><div className="page-width builder-progress-inner"><div className="progress-copy"><span>Step {currentStep + 1} of {steps.length}</span><strong>{steps[currentStep].title}</strong><small>{completedCount} of 7 content sections started</small></div><div className="progress-score" title="CV completeness — see the Review step for details"><ScoreRing score={score} size={40} /><span><strong>{score}%</strong><small>{scoreLabel(score)}</small></span></div><div className="progress-track" role="progressbar" aria-label="Builder progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}><span style={{ width: `${progress}%` }} /></div></div></div>
     <div className="builder-workspace page-width">
@@ -232,7 +241,7 @@ export function BuilderPage() {
       </main>
 
       <aside className="builder-preview-column" aria-label="Live CV preview">
-        <div className="preview-heading"><div><span className="eyebrow">LIVE PREVIEW</span><h2>Your CV, taking shape</h2><span className="page-pill">{pageCount} {pageCount === 1 ? 'page' : 'pages'} · {pageCount <= 1 ? 'Ideal length' : pageCount === 2 ? 'Great length' : 'Consider trimming'}</span></div><button type="button" className="preview-refresh" onClick={() => setShowPreview(false)} title="Keep editing"><FileText size={16} /><span>Edit</span></button></div>
+        <div className="preview-heading"><div><span className="eyebrow">LIVE PREVIEW</span><h2>Your CV, taking shape</h2><span className="page-pill">{pageCount} {pageCount === 1 ? 'page' : 'pages'} · {pageCount <= 1 ? 'Ideal length' : pageCount === 2 ? 'Great length' : 'Consider trimming'}</span></div><button type="button" className="preview-refresh" onClick={() => { setShowPreview(false); setPreviewVisible(false); }} title="Hide preview and keep editing"><FileText size={16} /><span>Edit</span></button></div>
         <QuickDesignBar doc={draft} onTemplate={(id) => commit((current) => ({ ...current, templateId: id }))} onAccent={(color) => commit((current) => ({ ...current, accentColor: color }))} />
         <CVPreview document={draft} onPageCount={setPageCount} />
         <p className="preview-print-note">PDF export uses your browser’s print dialog. Choose “Save as PDF” to download; text remains selectable.</p>
