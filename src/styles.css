@@ -3948,3 +3948,39 @@ html[data-theme="dark"] .article-cta { background: linear-gradient(135deg, #0f2a
   .preview-toggle { display: none; }
   .progress-score > span { display: none; }
 }
+
+/* ---------- Searchable country calling-code picker ---------- */
+.code-combo-wrap { position: relative; display: block; min-width: 0; }
+.code-combo-button {
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  width: 100%; min-height: 44px; padding: 10px 10px 10px 13px;
+  border: 1.5px solid #ccd8d2; border-radius: 11px; background: #fff; color: #213b45;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+.code-combo-button:hover { border-color: #9db8ad; }
+.code-combo-button:focus-visible { outline: none; border-color: var(--teal); box-shadow: 0 0 0 4px var(--ring); }
+.code-combo-button svg { flex: 0 0 auto; color: #7a8988; }
+.code-combo-value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.code-combo-panel {
+  position: absolute; z-index: 60; top: calc(100% + 6px); left: 0;
+  width: max-content; min-width: 100%; max-width: min(280px, 80vw);
+  padding: 8px; background: #fff; border: 1px solid var(--line-dark);
+  border-radius: 12px; box-shadow: var(--shadow-md);
+}
+.code-combo-panel > input {
+  display: block; width: 100%; min-height: 40px; padding: 9px 11px; margin-bottom: 6px;
+  border: 1.5px solid #ccd8d2; border-radius: 9px; background: #fff; color: #213b45; font-size: 13px;
+}
+.code-combo-panel > input:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 4px var(--ring); }
+.code-combo-list { position: static; border: 0; box-shadow: none; padding: 0; max-height: 230px; }
+.code-combo-option { display: flex; align-items: baseline; gap: 10px; }
+.code-combo-code { flex: 0 0 auto; min-width: 46px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.code-combo-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.code-combo-clear { font-size: 12.5px; font-weight: 700; color: var(--teal-dark); }
+[data-theme="dark"] .code-combo-button { border-color: var(--line); background: var(--surface); color: #c9d8e2; }
+[data-theme="dark"] .code-combo-button:hover { border-color: var(--line-dark); }
+[data-theme="dark"] .code-combo-button svg { color: var(--faint); }
+[data-theme="dark"] .code-combo-panel { background: var(--surface); border-color: var(--line); }
+[data-theme="dark"] .code-combo-panel > input { border-color: var(--line); background: var(--surface); color: #c9d8e2; }
+[data-theme="dark"] .code-combo-clear { color: #5eead4; }
