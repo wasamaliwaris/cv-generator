@@ -59,6 +59,8 @@ function normalizeProfile(value: unknown): Profile {
       phone: text(p.phone), phoneCountryCode: text(p.phoneCountryCode), city: text(p.city), region: text(p.region),
       country: text(p.country), postalCode: text(p.postalCode), website: text(p.website), linkedin: text(p.linkedin),
       portfolio: text(p.portfolio), otherLink: text(p.otherLink), photoDataUrl: text(p.photoDataUrl),
+      presentAddress: text(p.presentAddress), dateOfBirth: text(p.dateOfBirth), maritalStatus: text(p.maritalStatus),
+      nationality: text(p.nationality), religion: text(p.religion),
     },
     summary: text(value.summary), workExperience, education, skills, languages, optionalSections,
   };
@@ -124,13 +126,16 @@ export function loadAppData(): AppData {
   }
 }
 
-export function persistAppData(value: AppData): boolean {
+export function persistAppData(value: AppData): 'saved' | 'quota' | 'error' {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
-    return true;
+    return 'saved';
   } catch (error) {
     console.error('PathCV could not save local data.', error);
-    return false;
+    const name = (error as { name?: string; code?: number } | null)?.name;
+    const code = (error as { name?: string; code?: number } | null)?.code;
+    if (name === 'QuotaExceededError' || code === 22) return 'quota';
+    return 'error';
   }
 }
 

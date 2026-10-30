@@ -1263,11 +1263,11 @@ img { max-width: 100%; }
   font-size: 10.5px;
   font-weight: 750;
 }
-.save-status.error { color: #a24435; background: var(--danger-soft); border-color: #eec2bb; }
+.save-status.error, .save-status.quota { color: #a24435; background: var(--danger-soft); border-color: #eec2bb; }
 .save-status.saving { color: #7a5a2e; background: #fbf3e2; border-color: #e7d3a3; }
 .status-dot { width: 7px; height: 7px; flex: 0 0 7px; border-radius: 50%; background: #2e9e6b; }
 .save-status.saving .status-dot { background: #c98f2b; animation: pulse-dot 1.6s ease-in-out infinite; }
-.save-status.error .status-dot { background: #c05648; }
+.save-status.error .status-dot, .save-status.quota .status-dot { background: #c05648; }
 .builder-top-actions { display: flex; align-items: center; gap: 6px; }
 .builder-icon-action {
   display: inline-flex; align-items: center; gap: 6px;
@@ -3198,7 +3198,8 @@ html { scrollbar-color: #8fb3a6 transparent; }
   border: 1px solid var(--line);
   color: #5eead4;
 }
-[data-theme="dark"] .save-status.error {
+[data-theme="dark"] .save-status.error,
+[data-theme="dark"] .save-status.quota {
   color: #e07864;
   border-color: #6b332b;
 }

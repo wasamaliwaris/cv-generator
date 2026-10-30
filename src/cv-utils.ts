@@ -60,6 +60,15 @@ function bulletLines(value: string): string[] {
   return value.split(/\r?\n/).map((l) => l.replace(/^\s*[•*-]\s*/, '').trim()).filter(Boolean);
 }
 
+function formatBirthDatePlain(value: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  if (!match) return value.trim();
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const month = Number(match[2]);
+  if (month < 1 || month > 12) return value.trim();
+  return `${Number(match[3])} ${months[month - 1]} ${match[1]}`;
+}
+
 export function profileToPlainText(doc: CVDocument): string {
   const p = doc.profileSnapshot;
   const lines: string[] = [];
@@ -69,9 +78,18 @@ export function profileToPlainText(doc: CVDocument): string {
   const contactBits = [
     p.personal.email.trim(),
     [p.personal.phoneCountryCode, p.personal.phone].filter(Boolean).join(' '),
+    p.personal.presentAddress.trim(),
     [p.personal.city, p.personal.region, p.personal.country].filter(Boolean).join(', '),
   ].filter(Boolean);
   if (contactBits.length) lines.push(contactBits.join(' | '));
+  const birthDate = formatBirthDatePlain(p.personal.dateOfBirth);
+  const personalBits = [
+    birthDate ? `Born ${birthDate}` : '',
+    p.personal.maritalStatus.trim(),
+    p.personal.nationality.trim(),
+    p.personal.religion.trim(),
+  ].filter(Boolean);
+  if (personalBits.length) lines.push(personalBits.join(' \u00b7 '));
   const links = [p.personal.website, p.personal.linkedin, p.personal.portfolio, p.personal.otherLink]
     .map((l) => l.trim()).filter(Boolean);
   if (links.length) lines.push(links.join(' | '));

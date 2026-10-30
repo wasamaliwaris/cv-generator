@@ -241,7 +241,7 @@ export function DateFields({ label, value, onChange, error }: { label: string; v
   </div>{error && <span className="field-error" role="alert">{error}</span>}</div>;
 }
 
-export function PersonalFields({ profile, onChange }: { profile: Profile; onChange: (profile: Profile) => void }) {
+export function PersonalFields({ profile, onChange, onPhotoAdded }: { profile: Profile; onChange: (profile: Profile) => void; onPhotoAdded?: () => void }) {
   const [photoError, setPhotoError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
   const p = profile.personal;
@@ -250,11 +250,30 @@ export function PersonalFields({ profile, onChange }: { profile: Profile; onChan
     setPhotoError('');
     if (!file) return;
     if (!file.type.startsWith('image/')) { setPhotoError('Choose an image file.'); return; }
-    if (file.size > 4 * 1024 * 1024) { setPhotoError('Please choose an image smaller than 4 MB.'); return; }
-    const reader = new FileReader();
-    reader.onload = () => set('photoDataUrl', typeof reader.result === 'string' ? reader.result : '');
-    reader.onerror = () => setPhotoError('This image could not be read. Try another file.');
-    reader.readAsDataURL(file);
+    if (file.size > 8 * 1024 * 1024) { setPhotoError('Please choose an image smaller than 8 MB.'); return; }
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      try {
+        const MAX_SIDE = 512;
+        const scale = Math.min(1, MAX_SIDE / Math.max(img.naturalWidth, img.naturalHeight));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('canvas unavailable');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const compressed = canvas.toDataURL('image/jpeg', 0.82);
+        if (compressed.length > 700 * 1024) { setPhotoError('This photo is still too large after shrinking. Try a smaller image.'); return; }
+        set('photoDataUrl', compressed);
+        onPhotoAdded?.();
+      } catch {
+        setPhotoError('This image could not be read. Try another file.');
+      }
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); setPhotoError('This image could not be read. Try another file.'); };
+    img.src = url;
   };
   return <div className="form-stack">
     <div className="form-grid form-grid-two">
@@ -267,6 +286,11 @@ export function PersonalFields({ profile, onChange }: { profile: Profile; onChan
       <Field label="Region / state" autoComplete="address-level1" value={p.region} onChange={(e) => set('region', e.target.value)} />
       <CountryField value={p.country} onChange={(country) => set('country', country)} />
       <Field label="Postal code (optional)" autoComplete="postal-code" value={p.postalCode} onChange={(e) => set('postalCode', e.target.value)} />
+      <Field label="Present address (optional)" autoComplete="street-address" value={p.presentAddress} onChange={(e) => set('presentAddress', e.target.value)} className="span-two" />
+      <Field label="Date of birth (optional)" type="date" value={p.dateOfBirth} onChange={(e) => set('dateOfBirth', e.target.value)} />
+      <SelectField label="Marital status (optional)" value={p.maritalStatus} onChange={(e) => set('maritalStatus', e.target.value)}><option value="">Not specified</option><option>Single</option><option>Married</option><option>Divorced</option><option>Widowed</option></SelectField>
+      <Field label="Nationality (optional)" value={p.nationality} onChange={(e) => set('nationality', e.target.value)} />
+      <Field label="Religion (optional)" value={p.religion} onChange={(e) => set('religion', e.target.value)} />
       <Field label="Website" type="url" placeholder="yourwebsite.example" value={p.website} onChange={(e) => set('website', e.target.value)} />
       <Field label="LinkedIn" placeholder="linkedin.com/in/you" value={p.linkedin} onChange={(e) => set('linkedin', e.target.value)} />
       <Field label="Portfolio" placeholder="portfolio.example" value={p.portfolio} onChange={(e) => set('portfolio', e.target.value)} />
@@ -280,7 +304,7 @@ export function PersonalFields({ profile, onChange }: { profile: Profile; onChan
       </div>
       {p.photoDataUrl && <img className="photo-thumb" src={p.photoDataUrl} alt="Selected profile photo preview" />}
     </div>
-    <InlineNotice tone="info">PathCV never asks for your date of birth, ID numbers, marital status, or full street address.</InlineNotice>
+    <InlineNotice tone="info">Present address, date of birth, marital status, nationality, and religion are optional \u2014 add them only if employers in your field expect them. Like everything else here, they stay in this browser.</InlineNotice>
   </div>;
 }
 
