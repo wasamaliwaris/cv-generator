@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Award, Briefcase, Check, CircleHelp, Copy, Download, Eye, EyeOff, FileDown, FilePlus2, FileText, GraduationCap, Languages, Lightbulb, Palette, Plus, Rocket, RotateCcw, RotateCw, Save, ShieldCheck, Sparkles, UserRound, Wrench, Zap } from 'lucide-react';
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Award, Briefcase, Check, CircleHelp, Copy, Download, Eye, EyeOff, FileDown, FilePlus2, FileText, GraduationCap, History, Languages, Lightbulb, Palette, Plus, Rocket, RotateCcw, RotateCw, Save, ShieldCheck, Sparkles, UserRound, Wrench, Zap } from 'lucide-react';
 import type { BuilderSetup, CVDocument, DateFormat, Profile, SectionKey, TemplateId } from './model';
 import { ACCENT_PALETTE, DEFAULT_SECTION_ORDER, SECTION_LABELS, TEMPLATE_META, TEMPLATE_ORDER, emptyProfile, newDocument, sampleProfile, seedProfileFromLatest } from './model';
 import { useAppData } from './app-context';
@@ -46,6 +46,12 @@ function isComplete(step: number, doc: CVDocument) {
 
 function upsertDocument(doc: CVDocument, update: (callback: (current: import('./model').AppData) => import('./model').AppData) => void) {
   update((current) => ({ ...current, documents: [doc, ...current.documents.filter((item) => item.id !== doc.id)] }));
+}
+
+function formatEditedDate(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return 'recently';
+  return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 export function BuilderPage() {
@@ -188,10 +194,20 @@ export function BuilderPage() {
   const completedCount = draft ? steps.slice(0, 7).filter((_, index) => isComplete(index, draft)).length : 0;
   const score = useMemo(() => (draft ? scoreCV(draft).score : 0), [draft]);
   const savedCvCount = data.documents.length;
+  const latestSaved = useMemo(() => [...data.documents].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0], [data.documents]);
 
   if (!draft) {
     return <div className="builder-start page-width">
       <div className="builder-start-copy"><div className="eyebrow">PathCV builder</div><h1>Start with what you have.</h1><p>Build a clear, editable CV in small steps. Your work saves in this browser as you go.</p><div className="start-trust"><span><ShieldCheck size={16} /> Free PDF, no account</span><span><Save size={16} /> Local autosave</span></div></div>
+      {latestSaved && <section className="start-resume" aria-label="Continue your last CV">
+        <span className="resume-icon"><History size={17} /></span>
+        <div className="start-resume-text">
+          <span className="start-resume-eyebrow">CONTINUE WHERE YOU LEFT OFF</span>
+          <strong>{latestSaved.name || 'Untitled CV'}</strong>
+          <small>{TEMPLATE_META[latestSaved.templateId]?.name || 'Clear'} template · edited {formatEditedDate(latestSaved.updatedAt)}{savedCvCount > 1 ? ` · ${savedCvCount} versions saved` : ''}</small>
+        </div>
+        <Link to={`/builder?id=${encodeURIComponent(latestSaved.id)}`} className="button button-primary">Resume editing <ArrowRight size={16} /></Link>
+      </section>}
       <div className="start-choice-grid">
         <article className="start-choice-card"><div className="choice-icon"><FilePlus2 size={21} /></div><h2>Start from scratch</h2><p>Begin with a blank CV and add only the details you want to share.{savedCvCount > 0 ? ' Your name, contact details, and photo are copied over from your most recent CV.' : ''}</p><Button type="button" onClick={() => begin(emptyProfile())}>Start from scratch <ArrowRight size={16} /></Button></article>
         <article className="start-choice-card sample-choice"><div className="choice-icon"><FileText size={21} /></div><h2>Use a sample CV</h2><p>Explore the editor with fictional example content. Replace or remove every detail.</p><Button type="button" variant="secondary" onClick={() => begin(sampleProfile(), 'clear', true)}>Use a sample CV <ArrowRight size={16} /></Button><span className="fictional-stamp">FICTIONAL SAMPLE</span></article>
