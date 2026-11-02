@@ -3985,3 +3985,36 @@ html[data-theme="dark"] .article-cta { background: linear-gradient(135deg, #0f2a
 [data-theme="dark"] .code-combo-panel { background: var(--surface); border-color: var(--line); }
 [data-theme="dark"] .code-combo-panel > input { border-color: var(--line); background: var(--surface); color: #c9d8e2; }
 [data-theme="dark"] .code-combo-clear { color: #5eead4; }
+
+/* ---------- Builder start: continue from your last CV ---------- */
+.start-resume {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 22px;
+  padding: 15px 18px;
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-left: 4px solid var(--teal);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.16s ease, border-color 0.16s ease;
+}
+.start-resume:hover { box-shadow: var(--shadow-md); }
+.start-resume-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.start-resume-eyebrow {
+  font-size: 9.5px; font-weight: 800; letter-spacing: 0.12em;
+  color: var(--teal-dark);
+}
+.start-resume-text strong {
+  font-size: 15px; letter-spacing: -0.01em;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.start-resume-text small { font-size: 11.5px; color: var(--muted); }
+.start-resume .button { flex: 0 0 auto; }
+[data-theme="dark"] .start-resume { background: var(--surface); border-color: var(--line); border-left-color: var(--teal); }
+[data-theme="dark"] .start-resume-eyebrow { color: #5eead4; }
+@media (max-width: 640px) {
+  .start-resume { flex-wrap: wrap; row-gap: 12px; }
+  .start-resume .button { width: 100%; justify-content: center; }
+}
