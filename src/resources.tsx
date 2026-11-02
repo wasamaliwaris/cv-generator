@@ -82,7 +82,7 @@ export function ResourcesPage() {
     <div className="template-filters" role="group" aria-label="Filter articles">{ARTICLE_CATEGORIES.map((item) => <button type="button" key={item} className={filter === item ? 'active' : ''} aria-pressed={filter === item} onClick={() => setFilter(item)}>{item}</button>)}</div>
     <div className="resource-grid">{visible.map((article, i) => <Reveal key={article.slug} delay={(i % 3) * 90}><ResourceCard article={article} /></Reveal>)}</div>
     {visible.length === 0 && <p className="resource-empty">No articles in this category yet — check back soon.</p>}
-    <section className="article-cta"><div><h2>Put the advice to work.</h2><p>Build a tailored CV with ten templates, a plain-text check, and free PDF export.</p></div><div className="article-cta-actions"><Link to="/builder" className="button button-primary button-large">Create my CV free <ArrowRight size={18} /></Link><Link to="/templates" className="button button-outline button-large">Browse templates</Link></div></section>
+    <section className="article-cta"><div><h2>Put the advice to work.</h2><p>Build a tailored CV with ten templates, a plain-text check, and free PDF export.</p></div><div className="article-cta-actions"><Link to="/builder?new=1" className="button button-primary button-large">Create my CV free <ArrowRight size={18} /></Link><Link to="/templates" className="button button-outline button-large">Browse templates</Link></div></section>
   </main>;
 }
 
@@ -118,7 +118,7 @@ export function ArticlePage() {
       {article.sections.map((section, index) => <section key={section.heading} id={`sec-${index + 1}`}><h2>{section.heading}</h2>{section.paragraphs.map((paragraph, p) => <p key={p}>{paragraph}</p>)}{section.bullets && <ul>{section.bullets.map((bullet) => <li key={bullet}>{bullet}</li>)}</ul>}{section.tip && <aside className="article-tip"><strong>Tip.</strong> {section.tip}</aside>}</section>)}
       {article.closing.map((paragraph, index) => <p key={`closing-${index}`}><em>{paragraph}</em></p>)}
     </div>
-    <section className="article-cta"><div><h2>Put this guide to work.</h2><p>Build a tailored CV with ten templates, a plain-text check, and free PDF export.</p></div><div className="article-cta-actions"><Link to="/builder" className="button button-primary button-large">Create my CV free <ArrowRight size={18} /></Link><Link to="/templates" className="button button-outline button-large">Browse templates</Link></div></section>
+    <section className="article-cta"><div><h2>Put this guide to work.</h2><p>Build a tailored CV with ten templates, a plain-text check, and free PDF export.</p></div><div className="article-cta-actions"><Link to="/builder?new=1" className="button button-primary button-large">Create my CV free <ArrowRight size={18} /></Link><Link to="/templates" className="button button-outline button-large">Browse templates</Link></div></section>
     <section className="related-section"><div className="section-heading-row"><h2>Keep reading.</h2><Link to="/resources" className="arrow-link">All guides <ArrowRight size={16} /></Link></div><div className="resource-grid">{related.map((item) => <ResourceCard key={item.slug} article={item} />)}</div></section>
     <p className="article-back"><Link to="/resources"><ArrowLeft size={15} /> Back to all guides & articles</Link></p>
   </main>;

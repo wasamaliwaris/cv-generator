@@ -4018,3 +4018,7 @@ html[data-theme="dark"] .article-cta { background: linear-gradient(135deg, #0f2a
   .start-resume { flex-wrap: wrap; row-gap: 12px; }
   .start-resume .button { width: 100%; justify-content: center; }
 }
+
+/* ---------- Builder: auto-opened last CV notice ---------- */
+.builder-editor-column > .inline-notice { margin-bottom: 12px; }
+.builder-editor-column > .inline-notice a { font-weight: 700; }

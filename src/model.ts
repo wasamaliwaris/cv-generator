@@ -261,6 +261,35 @@ export function newDocument(profile: Profile, templateId: TemplateId = 'clear', 
   };
 }
 
+export type BuilderEntry =
+  | { kind: 'existing'; id: string }
+  | { kind: 'missing' }
+  | { kind: 'template'; templateId: TemplateId; sample: boolean }
+  | { kind: 'latest'; id: string }
+  | { kind: 'start' };
+
+/**
+ * Decides what the builder should open for a given URL search string.
+ * Unknown ?id falls back to a fresh CV; returning visitors land straight in their last CV
+ * unless they explicitly ask for a new one with ?new=1.
+ */
+export function resolveBuilderEntry(search: string, documents: { id: string; updatedAt: string }[]): BuilderEntry {
+  const params = new URLSearchParams(search);
+  const id = params.get('id');
+  if (id) {
+    return documents.some((doc) => doc.id === id) ? { kind: 'existing', id } : { kind: 'missing' };
+  }
+  const template = params.get('template');
+  if (template && (TEMPLATE_ORDER as string[]).includes(template)) {
+    return { kind: 'template', templateId: template as TemplateId, sample: params.get('sample') === '1' };
+  }
+  if (params.get('new') !== '1' && documents.length > 0) {
+    const latest = [...documents].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+    return { kind: 'latest', id: latest.id };
+  }
+  return { kind: 'start' };
+}
+
 const PERSONAL_KEYS: (keyof PersonalDetails)[] = [
   'firstName', 'lastName', 'headline', 'email', 'phone', 'phoneCountryCode', 'presentAddress',
   'city', 'region', 'country', 'postalCode', 'dateOfBirth', 'maritalStatus', 'nationality', 'religion',

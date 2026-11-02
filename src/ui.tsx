@@ -39,7 +39,7 @@ export function SiteHeader() {
           <NavLink to="/my-cvs" onClick={close}>My CVs</NavLink>
           <NavLink to="/help" onClick={close}>{message('nav').help}</NavLink>
           <NavLink to="/about" onClick={close}>About</NavLink>
-          <Link to="/builder" className="button button-primary nav-cta" onClick={close}>{message('nav').createMyCv} <ArrowRight size={16} /></Link>
+          <Link to="/builder?new=1" className="button button-primary nav-cta" onClick={close}>{message('nav').createMyCv} <ArrowRight size={16} /></Link>
           <ThemeToggle />
         </nav>
       </div>
