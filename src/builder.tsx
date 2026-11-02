@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Award, Briefcase, Check, CircleHelp, Copy, Download, Eye, EyeOff, FileDown, FilePlus2, FileText, FolderOpen, GraduationCap, History, Languages, Lightbulb, Palette, Plus, Rocket, RotateCcw, RotateCw, Save, ShieldCheck, Sparkles, UserRound, Wrench, Zap } from 'lucide-react';
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Award, Briefcase, Check, CircleHelp, Copy, Download, Eye, EyeOff, FileDown, FilePlus2, FileText, FolderOpen, GraduationCap, Languages, Lightbulb, Palette, Plus, Rocket, RotateCcw, RotateCw, Save, ShieldCheck, Sparkles, UserRound, Wrench, Zap } from 'lucide-react';
 import type { BuilderSetup, CVDocument, DateFormat, Profile, SectionKey, TemplateId } from './model';
 import { ACCENT_PALETTE, DEFAULT_SECTION_ORDER, SECTION_LABELS, TEMPLATE_META, TEMPLATE_ORDER, emptyProfile, newDocument, resolveBuilderEntry, sampleProfile, seedProfileFromLatest } from './model';
 import { useAppData } from './app-context';
@@ -47,12 +47,6 @@ function isComplete(step: number, doc: CVDocument) {
 
 function upsertDocument(doc: CVDocument, update: (callback: (current: import('./model').AppData) => import('./model').AppData) => void) {
   update((current) => ({ ...current, documents: [doc, ...current.documents.filter((item) => item.id !== doc.id)] }));
-}
-
-function formatEditedDate(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return 'recently';
-  return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 export function BuilderPage() {
@@ -258,20 +252,20 @@ export function BuilderPage() {
     return <div className="builder-start page-width">
       <input ref={openFileRef} type="file" accept={OPEN_FILE_ACCEPT} className="sr-only" aria-label="Open a CV file from your device" onChange={(e) => { void openFromDevice(e.target.files?.[0]); }} />
       <div className="builder-start-copy"><div className="eyebrow">PathCV builder</div><h1>Start with what you have.</h1><p>Build a clear, editable CV in small steps. Your work saves in this browser as you go.</p><div className="start-trust"><span><ShieldCheck size={16} /> Free PDF, no account</span><span><Save size={16} /> Local autosave</span></div></div>
-      {latestSaved && <section className="start-resume" aria-label="Continue your last CV">
-        <span className="resume-icon"><History size={17} /></span>
-        <div className="start-resume-text">
-          <span className="start-resume-eyebrow">CONTINUE WHERE YOU LEFT OFF</span>
-          <strong>{latestSaved.name || 'Untitled CV'}</strong>
-          <small>{TEMPLATE_META[latestSaved.templateId]?.name || 'Clear'} template · edited {formatEditedDate(latestSaved.updatedAt)}{savedCvCount > 1 ? ` · ${savedCvCount} versions saved` : ''}</small>
+      <section className="start-open-panel" aria-label="Open a CV file from your device">
+        <span className="resume-icon"><FolderOpen size={17} /></span>
+        <div className="start-open-text">
+          <span className="start-open-eyebrow">ALREADY HAVE A CV?</span>
+          <strong>Open a CV file and keep editing</strong>
+          <small>Browse your device for a PDF, Word (.docx), text, or PathCV .json file. It is read in this browser and turned into an editable draft.</small>
         </div>
-        <Link to={`/builder?id=${encodeURIComponent(latestSaved.id)}`} className="button button-primary">Resume editing <ArrowRight size={16} /></Link>
-      </section>}
+        <Button type="button" disabled={openingFile} onClick={() => openFileRef.current?.click()}>{openingFile ? 'Opening\u2026' : 'Browse files'}<FolderOpen size={16} /></Button>
+        {openError && <p className="start-open-error" role="alert">{openError}</p>}
+      </section>
       <div className="start-choice-grid">
         <article className="start-choice-card"><div className="choice-icon"><FilePlus2 size={21} /></div><h2>Start from scratch</h2><p>Begin with a blank CV and add only the details you want to share.{savedCvCount > 0 ? ' Your name, contact details, and photo are copied over from your most recent CV.' : ''}</p><Button type="button" onClick={() => begin(emptyProfile())}>Start from scratch <ArrowRight size={16} /></Button></article>
         <article className="start-choice-card sample-choice"><div className="choice-icon"><FileText size={21} /></div><h2>Use a sample CV</h2><p>Explore the editor with fictional example content. Replace or remove every detail.</p><Button type="button" variant="secondary" onClick={() => begin(sampleProfile(), 'clear', true)}>Use a sample CV <ArrowRight size={16} /></Button><span className="fictional-stamp">FICTIONAL SAMPLE</span></article>
         <article className="start-choice-card express-choice"><div className="choice-icon"><Zap size={21} /></div><h2>Express · 2 minutes</h2><p>Answer the essentials on one page and get an instant CV. Perfect for first-timers.</p><Link to="/express" className="button button-primary">Try Express <ArrowRight size={16} /></Link><span className="fictional-stamp">FASTEST</span></article>
-      <article className="start-choice-card open-choice"><div className="choice-icon"><FolderOpen size={21} /></div><h2>Open a CV file</h2><p>Have a CV saved as a PDF, Word, or text file? Browse your device, open it, and keep editing an editable draft.</p><Button type="button" variant="secondary" disabled={openingFile} onClick={() => openFileRef.current?.click()}>{openingFile ? 'Opening\u2026' : 'Browse files'}<FolderOpen size={16} /></Button>{openError && <p className="start-open-error" role="alert">{openError}</p>}</article>
       </div>
       <div className="kit-strip"><div className="kit-strip-head"><span>Popular role kits</span><small>Start the full builder with an editable headline, summary &amp; skills</small></div><div className="kit-strip-row">{ROLE_KITS.map((k) => <button key={k.id} type="button" className="kit-strip-btn" onClick={() => begin(profileFromKit(k))}>{k.label}</button>)}</div></div>
       <div className="setup-disclosure">
