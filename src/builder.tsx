@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Award, Briefcase, Check, CircleHelp, Copy, Download, Eye, EyeOff, FileDown, FilePlus2, FileText, GraduationCap, History, Languages, Lightbulb, Palette, Plus, Rocket, RotateCcw, RotateCw, Save, ShieldCheck, Sparkles, UserRound, Wrench, Zap } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Award, Briefcase, Check, CircleHelp, Copy, Download, Eye, EyeOff, FileDown, FilePlus2, FileText, FolderOpen, GraduationCap, History, Languages, Lightbulb, Palette, Plus, Rocket, RotateCcw, RotateCw, Save, ShieldCheck, Sparkles, UserRound, Wrench, Zap } from 'lucide-react';
 import type { BuilderSetup, CVDocument, DateFormat, Profile, SectionKey, TemplateId } from './model';
 import { ACCENT_PALETTE, DEFAULT_SECTION_ORDER, SECTION_LABELS, TEMPLATE_META, TEMPLATE_ORDER, emptyProfile, newDocument, resolveBuilderEntry, sampleProfile, seedProfileFromLatest } from './model';
 import { useAppData } from './app-context';
@@ -8,6 +8,7 @@ import { AdditionalSectionFields, EducationFields, LanguageFields, PersonalField
 import { TemplateMini } from './landing';
 import { ROLE_KITS, STEP_TIPS, profileFromKit } from './starters';
 import { copyText, downloadTextFile, profileToPlainText, scoreCV, scoreLabel } from './cv-utils';
+import { MAX_OPEN_BYTES, OPEN_FILE_ACCEPT, fileKind, openCvDocument, readBackupFile } from './cv-file-import';
 import { Button, Field, InlineNotice, ScoreRing, SelectField, usePageMeta } from './ui';
 import { CVPreview } from './cv-preview';
 import { message as t } from './strings';
@@ -58,6 +59,7 @@ export function BuilderPage() {
   usePageMeta({ title: 'CV Builder \u2014 PathCV', description: 'Build a professional CV step by step with live preview, ten templates, and free PDF export. No signup \u2014 your data stays in your browser.', path: '/builder' });
   const { data, setData, saveState } = useAppData();
   const location = useLocation();
+  const navigate = useNavigate();
   const [draft, setDraft] = useState<CVDocument | null>(null);
   const draftRef = useRef<CVDocument | null>(null);
   const initializedSearch = useRef<string | null>(null);
@@ -79,6 +81,9 @@ export function BuilderPage() {
   const [message, setMessage] = useState('');
   const [carriedOver, setCarriedOver] = useState(false);
   const [openedLatest, setOpenedLatest] = useState(false);
+  const [openingFile, setOpeningFile] = useState(false);
+  const [openError, setOpenError] = useState('');
+  const openFileRef = useRef<HTMLInputElement | null>(null);
   const [pageCount, setPageCount] = useState(1);
 
   const freshDocument = useCallback((profile: Profile, template: TemplateId, name: string, documents: CVDocument[], fictional = false) => {
@@ -194,6 +199,49 @@ export function BuilderPage() {
     storeDraft(doc);
   };
 
+  const openFromDevice = async (file?: File) => {
+    if (!file) return;
+    setOpenError('');
+    setOpeningFile(true);
+    try {
+      const kind = fileKind(file);
+      if (kind === 'unknown') throw new Error('Choose a PDF, Word (.docx), text, or PathCV .json file.');
+      if (file.size > MAX_OPEN_BYTES) throw new Error('That file is larger than 20 MB. Choose a smaller file.');
+      if (kind === 'backup') {
+        const incoming = await readBackupFile(file);
+        const merged = [...incoming.documents.filter((doc) => !data.documents.some((item) => item.id === doc.id)), ...data.documents];
+        if (!merged.length) throw new Error('That backup does not contain any CV versions.');
+        const keepProfile = Boolean(data.profile.personal.firstName.trim() || data.profile.personal.email.trim());
+        setData((current) => ({
+          ...current,
+          documents: [...incoming.documents.filter((doc) => !current.documents.some((item) => item.id === doc.id)), ...current.documents],
+          profile: keepProfile ? current.profile : incoming.profile,
+        }));
+        const newest = [...merged].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+        draftRef.current = newest;
+        setDraft(newest);
+        setPast([]);
+        setFuture([]);
+        setCurrentStep(0);
+        setMessage('Opened your PathCV backup. Nothing that was already saved here was replaced.');
+        navigate(`/builder?id=${encodeURIComponent(newest.id)}`);
+      } else {
+        const { document: imported, notice } = await openCvDocument(file);
+        storeDraft(imported);
+        setPast([]);
+        setFuture([]);
+        setCurrentStep(0);
+        setMessage(notice);
+        navigate(`/builder?id=${encodeURIComponent(imported.id)}`);
+      }
+    } catch (error) {
+      setOpenError(error instanceof Error ? error.message : 'That file could not be opened.');
+    } finally {
+      setOpeningFile(false);
+      if (openFileRef.current) openFileRef.current.value = '';
+    }
+  };
+
   const updateProfileSnapshot = (profile: Profile) => commit((current) => ({ ...current, profileSnapshot: profile }));
   const updateVisibility = (key: SectionKey, visible: boolean) => commit((current) => ({ ...current, sectionVisibility: { ...current.sectionVisibility, [key]: visible } }));
   const printDocument = () => {
@@ -208,6 +256,7 @@ export function BuilderPage() {
 
   if (!draft) {
     return <div className="builder-start page-width">
+      <input ref={openFileRef} type="file" accept={OPEN_FILE_ACCEPT} className="sr-only" aria-label="Open a CV file from your device" onChange={(e) => { void openFromDevice(e.target.files?.[0]); }} />
       <div className="builder-start-copy"><div className="eyebrow">PathCV builder</div><h1>Start with what you have.</h1><p>Build a clear, editable CV in small steps. Your work saves in this browser as you go.</p><div className="start-trust"><span><ShieldCheck size={16} /> Free PDF, no account</span><span><Save size={16} /> Local autosave</span></div></div>
       {latestSaved && <section className="start-resume" aria-label="Continue your last CV">
         <span className="resume-icon"><History size={17} /></span>
@@ -222,6 +271,7 @@ export function BuilderPage() {
         <article className="start-choice-card"><div className="choice-icon"><FilePlus2 size={21} /></div><h2>Start from scratch</h2><p>Begin with a blank CV and add only the details you want to share.{savedCvCount > 0 ? ' Your name, contact details, and photo are copied over from your most recent CV.' : ''}</p><Button type="button" onClick={() => begin(emptyProfile())}>Start from scratch <ArrowRight size={16} /></Button></article>
         <article className="start-choice-card sample-choice"><div className="choice-icon"><FileText size={21} /></div><h2>Use a sample CV</h2><p>Explore the editor with fictional example content. Replace or remove every detail.</p><Button type="button" variant="secondary" onClick={() => begin(sampleProfile(), 'clear', true)}>Use a sample CV <ArrowRight size={16} /></Button><span className="fictional-stamp">FICTIONAL SAMPLE</span></article>
         <article className="start-choice-card express-choice"><div className="choice-icon"><Zap size={21} /></div><h2>Express · 2 minutes</h2><p>Answer the essentials on one page and get an instant CV. Perfect for first-timers.</p><Link to="/express" className="button button-primary">Try Express <ArrowRight size={16} /></Link><span className="fictional-stamp">FASTEST</span></article>
+      <article className="start-choice-card open-choice"><div className="choice-icon"><FolderOpen size={21} /></div><h2>Open a CV file</h2><p>Have a CV saved as a PDF, Word, or text file? Browse your device, open it, and keep editing an editable draft.</p><Button type="button" variant="secondary" disabled={openingFile} onClick={() => openFileRef.current?.click()}>{openingFile ? 'Opening\u2026' : 'Browse files'}<FolderOpen size={16} /></Button>{openError && <p className="start-open-error" role="alert">{openError}</p>}</article>
       </div>
       <div className="kit-strip"><div className="kit-strip-head"><span>Popular role kits</span><small>Start the full builder with an editable headline, summary &amp; skills</small></div><div className="kit-strip-row">{ROLE_KITS.map((k) => <button key={k.id} type="button" className="kit-strip-btn" onClick={() => begin(profileFromKit(k))}>{k.label}</button>)}</div></div>
       <div className="setup-disclosure">
@@ -238,9 +288,10 @@ export function BuilderPage() {
   const saveLabel = saveState === 'saving' ? 'Saving…' : saveState === 'quota' ? 'Storage full' : saveState === 'error' ? 'Save issue' : 'Saved';
 
   return <div className={`builder-page ${showPreview ? 'builder-show-preview' : ''} ${previewVisible ? '' : 'builder-hide-preview'}`}>
+    <input ref={openFileRef} type="file" accept={OPEN_FILE_ACCEPT} className="sr-only" aria-label="Open a CV file from your device" onChange={(e) => { void openFromDevice(e.target.files?.[0]); }} />
     <div className="builder-topbar page-width">
       <div className="builder-doc-name"><FileText size={17} /><span>{draft.name || 'Untitled CV'}</span><span className={`save-status ${saveState}`} title={saveState === 'quota' ? 'Browser storage is full \u2014 delete old CV versions or remove photos, then keep editing.' : undefined}><span className="status-dot" />{saveLabel}</span></div>
-      <div className="builder-top-actions"><button type="button" className="builder-icon-action preview-toggle" aria-pressed={previewVisible} title={previewVisible ? 'Hide the live CV preview' : 'Show the live CV preview'} onClick={togglePreview}>{previewVisible ? <EyeOff size={16} /> : <Eye size={16} />}<span>{previewVisible ? 'Hide' : 'Preview'}</span></button><button type="button" className="builder-icon-action" disabled={past.length === 0} onClick={undo} aria-label="Undo last change" title="Undo"><RotateCcw size={16} /><span>Undo</span></button><button type="button" className="builder-icon-action" disabled={future.length === 0} onClick={redo} aria-label="Redo last change" title="Redo"><RotateCw size={16} /><span>Redo</span></button><Link className="builder-exit" to="/my-cvs">Save and exit <ArrowRight size={15} /></Link></div>
+      <div className="builder-top-actions"><button type="button" className="builder-icon-action" disabled={openingFile} onClick={() => openFileRef.current?.click()} title="Open a CV file (PDF, Word, text) from your device" aria-label="Open a CV file from your device"><FolderOpen size={16} /><span>{openingFile ? 'Opening\u2026' : 'Open file'}</span></button><button type="button" className="builder-icon-action preview-toggle" aria-pressed={previewVisible} title={previewVisible ? 'Hide the live CV preview' : 'Show the live CV preview'} onClick={togglePreview}>{previewVisible ? <EyeOff size={16} /> : <Eye size={16} />}<span>{previewVisible ? 'Hide' : 'Preview'}</span></button><button type="button" className="builder-icon-action" disabled={past.length === 0} onClick={undo} aria-label="Undo last change" title="Undo"><RotateCcw size={16} /><span>Undo</span></button><button type="button" className="builder-icon-action" disabled={future.length === 0} onClick={redo} aria-label="Redo last change" title="Redo"><RotateCw size={16} /><span>Redo</span></button><Link className="builder-exit" to="/my-cvs">Save and exit <ArrowRight size={15} /></Link></div>
     </div>
     <div className="builder-progress-wrap"><div className="page-width builder-progress-inner"><div className="progress-copy"><span>Step {currentStep + 1} of {steps.length}</span><strong>{steps[currentStep].title}</strong><small>{completedCount} of 7 content sections started</small></div><div className="progress-score" title="CV completeness — see the Review step for details"><ScoreRing score={score} size={40} /><span><strong>{score}%</strong><small>{scoreLabel(score)}</small></span></div><div className="progress-track" role="progressbar" aria-label="Builder progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}><span style={{ width: `${progress}%` }} /></div></div></div>
     <div className="builder-workspace page-width">
@@ -263,6 +314,7 @@ export function BuilderPage() {
           <div className="editor-heading"><div className="eyebrow">SECTION {String(currentStep + 1).padStart(2, '0')}</div><h1>{steps[currentStep].title}</h1><p>{steps[currentStep].description}</p></div>
           <div className="pro-tip"><Lightbulb size={15} /><span><strong>Pro tip: </strong>{STEP_TIPS[currentStep]}</span></div>
           {message && <InlineNotice tone="warning">{message}</InlineNotice>}
+          {openError && <InlineNotice tone="error">{openError}</InlineNotice>}
           {currentStep === 0 && carriedOver && <InlineNotice tone="info">Personal details were copied from your most recent CV so you do not retype them. Edit or replace anything here.</InlineNotice>}
           {currentStep === 0 && <PersonalFields profile={profile} onChange={updateProfileSnapshot} onPhotoAdded={() => commit((current) => (current.showPhoto ? current : { ...current, showPhoto: true }))} />}
           {currentStep === 1 && <SummaryFields profile={profile} onChange={updateProfileSnapshot} />}

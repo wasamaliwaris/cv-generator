@@ -4022,3 +4022,27 @@ html[data-theme="dark"] .article-cta { background: linear-gradient(135deg, #0f2a
 /* ---------- Builder: auto-opened last CV notice ---------- */
 .builder-editor-column > .inline-notice { margin-bottom: 12px; }
 .builder-editor-column > .inline-notice a { font-weight: 700; }
+
+/* ---------- Open a CV file from your device ---------- */
+.start-open-error {
+  margin: 10px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--danger);
+  line-height: 1.5;
+}
+[data-theme="dark"] .start-open-error { color: #e07864; }
+.start-choice-card.open-choice .choice-icon {
+  background: linear-gradient(140deg, #0b2239, #14324d);
+}
+[data-theme="dark"] .start-choice-card.open-choice .choice-icon {
+  background: linear-gradient(140deg, #16394f, #0d2635);
+  color: #5eead4;
+}
+
+/* ---------- Page heading with two actions ---------- */
+.page-heading-button-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: flex-end; }
+@media (max-width: 720px) {
+  .page-heading-button-row { justify-content: flex-start; width: 100%; }
+  .page-heading-button-row .button { flex: 1 1 auto; justify-content: center; }
+}

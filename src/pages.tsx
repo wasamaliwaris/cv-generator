@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, BadgeCheck, Copy, FilePlus2, Heart, Mail, Pencil, Send, ShieldCheck, Trash2 } from 'lucide-react';
+import { ArrowRight, BadgeCheck, Copy, FilePlus2, FolderOpen, Heart, Mail, Pencil, Send, ShieldCheck, Trash2 } from 'lucide-react';
 import type { CVDocument, Profile, TemplateId } from './model';
 import { TEMPLATE_META, TEMPLATE_ORDER, isValidEmail, newDocument, sampleProfile, uid } from './model';
 import { scoreCV } from './cv-utils';
+import { MAX_OPEN_BYTES, OPEN_FILE_ACCEPT, fileKind, openCvDocument, readBackupFile } from './cv-file-import';
 import { useAppData } from './app-context';
 import { AdditionalSectionFields, EducationFields, LanguageFields, PersonalFields, SkillsFields, SummaryFields, WorkExperienceFields } from './forms';
 import { DataTools } from './data-tools';
@@ -42,6 +43,7 @@ const faqGroups = [
   { q: 'Is PathCV free?', a: 'Yes. Building, all ten templates, and PDF export are free. There is no paywall, watermark, or signup requirement.' },
   { q: 'Do I need an account?', a: 'No. There is no account in this build. Your CV data is saved only in localStorage in this browser on this device.' },
   { q: 'Where is my data saved?', a: 'In this browser on this device only. It is not synced to an account or cloud. Clearing browser data removes it; you can export a JSON backup from Profile or Saved CVs.' },
+  { q: 'Can I open a CV I already made elsewhere?', a: 'Yes. Use Open a CV file in the builder or on Saved CVs, then browse to a PDF, Word (.docx), text, or PathCV .json file. The file is read in this browser only. Its text is placed into an editable draft — layout and formatting are not copied, so check each field and move content into the right sections.' },
   { q: 'Can I create multiple CVs?', a: 'Yes. Each saved CV is a separate local document with its own snapshot. Open another version without changing the source profile.' },
   { q: 'Can I change sections and their order?', a: 'Yes. In Choose design, show or hide sections and move them up or down. Empty sections are omitted from the preview.' },
   { q: 'Does PathCV translate my content?', a: 'No. The interface is structured so more languages can be added later, but it is English-only today. Your CV content is not automatically translated.' },
@@ -69,7 +71,7 @@ export function HelpPage() {
 
 export function PrivacyPage() {
   usePageMeta({ title: 'Privacy by Design \u2014 PathCV', description: 'Your CV never leaves your browser: how PathCV stores data locally, sets no tracking cookies, and lets you delete everything.', path: '/privacy' });
-  return <main className="page-width standard-page privacy-page"><PageHeading eyebrow="YOUR DATA, YOUR DEVICE" title="Privacy by design." description="A plain-language explanation of how this version of PathCV handles your CV information." /><div className="privacy-callout"><div className="privacy-symbol">◎</div><div><h2>Stored in this browser only</h2><p>This build has no account, cloud sync, or CV upload service. Your profile, saved CV versions, photo, and cover-letter draft are held in browser localStorage on this device.</p></div></div><div className="privacy-content-grid"><aside className="privacy-toc"><strong>On this page</strong><a href="#storage">Storage</a><a href="#backup">Backups and imports</a><a href="#advertising">Advertising & cookies</a><a href="#removal">Removing data</a><a href="#limits">Current limitations</a></aside><div className="privacy-article"><section id="storage"><h2>What is stored, and where?</h2><p>PathCV stores the profile, CV snapshots, template preferences, and cover-letter draft in this browser’s localStorage. The CV content is not sent to a PathCV account or cloud service by this build. The browser still downloads the app itself like any website.</p><p>Local storage is tied to this browser and device. It is not a secure vault: anyone with access to this browser profile may be able to use or inspect its saved data. Avoid entering information you do not want stored here, especially on a shared device.</p></section><section id="backup"><h2>Exporting and importing</h2><p>Export JSON creates a file containing your local profile, saved CV documents, and cover-letter draft. The file is downloaded to your device; keep it somewhere private. Import reads a JSON file you choose, validates its basic structure, and asks before replacing current PathCV data.</p></section><section id="advertising"><h2>Advertising and cookies</h2><p>PathCV itself sets no tracking cookies and currently serves no advertising. Your CV content never leaves this browser, as described above.</p><p>If we introduce advertising in the future — for example through Google AdSense — third-party vendors, including Google, may use cookies to serve ads on this site. Google’s use of advertising cookies enables it and its partners to serve ads based on visits to this and other sites. You can opt out of personalized advertising at <a href="https://www.google.com/settings/ads" target="_blank" rel="noreferrer">Google’s Ads Settings</a> and learn more at <a href="https://www.aboutads.info/choices/" target="_blank" rel="noreferrer">aboutads.info</a>. You can also block or delete cookies at any time through your browser settings; PathCV’s builder features do not depend on cookies.</p><p>This page will be updated before any advertising begins, so what you read here always matches what the site actually does.</p></section><section id="removal"><h2>Removing your data</h2><p>Use “Clear all data” on the Profile or Saved CVs page and confirm. This removes PathCV’s local data from this browser. Clearing site data or browser storage has the same effect. If you previously exported JSON, remove that file separately.</p></section><section id="limits"><h2>What this build does not do</h2><ul><li>No account, cloud save, public sharing link, or CV upload.</li><li>No automatic translation, AI writing, or ATS scoring.</li><li>No guarantee of interviews, employment, or ATS results.</li><li>No DOCX export. PDF saving uses the browser print dialog, where you can choose “Save as PDF”.</li></ul><p>PathCV is English-only in this build. Dates use your browser locale when a month name is displayed; your CV wording remains as you entered it.</p></section></div></div></main>;
+  return <main className="page-width standard-page privacy-page"><PageHeading eyebrow="YOUR DATA, YOUR DEVICE" title="Privacy by design." description="A plain-language explanation of how this version of PathCV handles your CV information." /><div className="privacy-callout"><div className="privacy-symbol">◎</div><div><h2>Stored in this browser only</h2><p>This build has no account, cloud sync, or CV upload service. Your profile, saved CV versions, photo, and cover-letter draft are held in browser localStorage on this device.</p></div></div><div className="privacy-content-grid"><aside className="privacy-toc"><strong>On this page</strong><a href="#storage">Storage</a><a href="#backup">Backups and imports</a><a href="#advertising">Advertising & cookies</a><a href="#removal">Removing data</a><a href="#limits">Current limitations</a></aside><div className="privacy-article"><section id="storage"><h2>What is stored, and where?</h2><p>PathCV stores the profile, CV snapshots, template preferences, and cover-letter draft in this browser’s localStorage. The CV content is not sent to a PathCV account or cloud service by this build. The browser still downloads the app itself like any website.</p><p>Local storage is tied to this browser and device. It is not a secure vault: anyone with access to this browser profile may be able to use or inspect its saved data. Avoid entering information you do not want stored here, especially on a shared device.</p></section><section id="backup"><h2>Exporting and importing</h2><p>Opening a CV you already have — a PDF, Word, text, or PathCV file — also happens entirely in this browser: the file is read locally to build an editable draft and is never uploaded to a server.</p><p>Export JSON creates a file containing your local profile, saved CV documents, and cover-letter draft. The file is downloaded to your device; keep it somewhere private. Import reads a JSON file you choose, validates its basic structure, and asks before replacing current PathCV data.</p></section><section id="advertising"><h2>Advertising and cookies</h2><p>PathCV itself sets no tracking cookies and currently serves no advertising. Your CV content never leaves this browser, as described above.</p><p>If we introduce advertising in the future — for example through Google AdSense — third-party vendors, including Google, may use cookies to serve ads on this site. Google’s use of advertising cookies enables it and its partners to serve ads based on visits to this and other sites. You can opt out of personalized advertising at <a href="https://www.google.com/settings/ads" target="_blank" rel="noreferrer">Google’s Ads Settings</a> and learn more at <a href="https://www.aboutads.info/choices/" target="_blank" rel="noreferrer">aboutads.info</a>. You can also block or delete cookies at any time through your browser settings; PathCV’s builder features do not depend on cookies.</p><p>This page will be updated before any advertising begins, so what you read here always matches what the site actually does.</p></section><section id="removal"><h2>Removing your data</h2><p>Use “Clear all data” on the Profile or Saved CVs page and confirm. This removes PathCV’s local data from this browser. Clearing site data or browser storage has the same effect. If you previously exported JSON, remove that file separately.</p></section><section id="limits"><h2>What this build does not do</h2><ul><li>No account, cloud save, public sharing link, or CV upload.</li><li>No automatic translation, AI writing, or ATS scoring.</li><li>No guarantee of interviews, employment, or ATS results.</li><li>No DOCX export. PDF saving uses the browser print dialog, where you can choose “Save as PDF”.</li></ul><p>PathCV is English-only in this build. Dates use your browser locale when a month name is displayed; your CV wording remains as you entered it.</p></section></div></div></main>;
 }
 
 export function ProfilePage() {
@@ -99,6 +101,7 @@ function formatUpdated(value: string) {
 export function MyCVsPage() {
   usePageMeta({ title: 'My Saved CVs \u2014 PathCV', description: 'Open, duplicate, rename, and manage the CV versions saved privately in this browser.', path: '/my-cvs' });
   const { data, setData, saveState } = useAppData();
+  const navigate = useNavigate();
   const [renameId, setRenameId] = useState('');
   const [renameValue, setRenameValue] = useState('');
   const documents = useMemo(() => [...data.documents].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)), [data.documents]);
@@ -110,6 +113,36 @@ export function MyCVsPage() {
     if (!window.confirm(`Delete “${doc.name}” from this browser? This cannot be undone.`)) return;
     setData((current) => ({ ...current, documents: current.documents.filter((item) => item.id !== doc.id) }));
   };
+  const openFileRef = useRef<HTMLInputElement | null>(null);
+  const [openingFile, setOpeningFile] = useState(false);
+  const [openError, setOpenError] = useState('');
+  const openFromDevice = async (file?: File) => {
+    if (!file) return;
+    setOpenError('');
+    setOpeningFile(true);
+    try {
+      const kind = fileKind(file);
+      if (kind === 'unknown') throw new Error('Choose a PDF, Word (.docx), text, or PathCV .json file.');
+      if (file.size > MAX_OPEN_BYTES) throw new Error('That file is larger than 20 MB. Choose a smaller file.');
+      if (kind === 'backup') {
+        const incoming = await readBackupFile(file);
+        const merged = [...incoming.documents.filter((doc) => !data.documents.some((item) => item.id === doc.id)), ...data.documents];
+        if (!merged.length) throw new Error('That backup does not contain any CV versions.');
+        setData((current) => ({ ...current, documents: [...incoming.documents.filter((doc) => !current.documents.some((item) => item.id === doc.id)), ...current.documents] }));
+        const newest = [...merged].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+        navigate(`/builder?id=${encodeURIComponent(newest.id)}`);
+      } else {
+        const { document: imported } = await openCvDocument(file);
+        setData((current) => ({ ...current, documents: [imported, ...current.documents] }));
+        navigate(`/builder?id=${encodeURIComponent(imported.id)}`);
+      }
+    } catch (error) {
+      setOpenError(error instanceof Error ? error.message : 'That file could not be opened.');
+    } finally {
+      setOpeningFile(false);
+      if (openFileRef.current) openFileRef.current.value = '';
+    }
+  };
   const startRename = (doc: CVDocument) => { setRenameId(doc.id); setRenameValue(doc.name); };
   const saveRename = (doc: CVDocument) => {
     const name = renameValue.trim() || 'Untitled CV';
@@ -117,7 +150,9 @@ export function MyCVsPage() {
     setRenameId('');
   };
 
-  return <main className="page-width standard-page my-cvs-page"><PageHeading eyebrow="SAVED ON THIS DEVICE" title="Your CV versions." description="Each version has its own saved snapshot. Open one to continue editing without replacing the others." actions={<Link to="/builder?template=clear" className="button button-primary"><FilePlus2 size={16} /> New CV from profile</Link>} /><LocalDataNotice /><div className="profile-save-line"><span className={`save-status ${saveState}`}><span className="status-dot" />{saveState === 'saving' ? 'Saving…' : saveState === 'quota' ? 'Storage full' : saveState === 'error' ? 'Save issue' : 'Saved locally'}</span>{saveState === 'quota' ? <span>Storage is full \u2014 delete old versions or remove photos, then re-add.</span> : <span>{documents.length} {documents.length === 1 ? 'version' : 'versions'} stored in this browser</span>}</div>
+  return <main className="page-width standard-page my-cvs-page"><PageHeading eyebrow="SAVED ON THIS DEVICE" title="Your CV versions." description="Each version has its own saved snapshot. Open one to continue editing without replacing the others." actions={<div className="page-heading-button-row"><button type="button" className="button button-secondary" disabled={openingFile} onClick={() => openFileRef.current?.click()}><FolderOpen size={16} /> {openingFile ? 'Opening\u2026' : 'Open a CV file'}</button><Link to="/builder?template=clear" className="button button-primary"><FilePlus2 size={16} /> New CV from profile</Link></div>} /><LocalDataNotice /><div className="profile-save-line"><span className={`save-status ${saveState}`}><span className="status-dot" />{saveState === 'saving' ? 'Saving…' : saveState === 'quota' ? 'Storage full' : saveState === 'error' ? 'Save issue' : 'Saved locally'}</span>{saveState === 'quota' ? <span>Storage is full \u2014 delete old versions or remove photos, then re-add.</span> : <span>{documents.length} {documents.length === 1 ? 'version' : 'versions'} stored in this browser</span>}</div>
+    <input ref={openFileRef} type="file" accept={OPEN_FILE_ACCEPT} className="sr-only" aria-label="Open a CV file from your device" onChange={(e) => { void openFromDevice(e.target.files?.[0]); }} />
+    {openError && <InlineNotice tone="error">{openError}</InlineNotice>}
     {documents.length === 0 ? <EmptyState title="No saved CVs yet" description="Start a new CV from your reusable profile, or begin with a blank one. Your first draft will save here automatically." action={<div className="empty-actions"><Link className="button button-primary" to="/builder?template=clear">Create from profile</Link><Link className="button button-secondary" to="/builder?new=1">Start from scratch</Link></div>} /> : <div className="saved-cv-grid">{documents.map((doc) => {
       const p = doc.profileSnapshot;
       const person = [p.personal.firstName, p.personal.lastName].filter(Boolean).join(' ') || 'Name not added';
