@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Award, Briefcase, Check, CircleHelp, Copy, Download, Eye, EyeOff, FileDown, FilePlus2, FileText, GraduationCap, History, Languages, Lightbulb, Palette, Plus, Rocket, RotateCcw, RotateCw, Save, ShieldCheck, Sparkles, UserRound, Wrench, Zap } from 'lucide-react';
 import type { BuilderSetup, CVDocument, DateFormat, Profile, SectionKey, TemplateId } from './model';
-import { ACCENT_PALETTE, DEFAULT_SECTION_ORDER, SECTION_LABELS, TEMPLATE_META, TEMPLATE_ORDER, emptyProfile, newDocument, sampleProfile, seedProfileFromLatest } from './model';
+import { ACCENT_PALETTE, DEFAULT_SECTION_ORDER, SECTION_LABELS, TEMPLATE_META, TEMPLATE_ORDER, emptyProfile, newDocument, resolveBuilderEntry, sampleProfile, seedProfileFromLatest } from './model';
 import { useAppData } from './app-context';
 import { AdditionalSectionFields, EducationFields, LanguageFields, PersonalFields, SkillsFields, SummaryFields, WorkExperienceFields } from './forms';
 import { TemplateMini } from './landing';
@@ -78,6 +78,7 @@ export function BuilderPage() {
   const [setup, setSetup] = useState<SetupState>({ purpose: 'General', targetRole: '', targetCountry: '', documentLanguage: 'English', dateFormat: 'month-year' });
   const [message, setMessage] = useState('');
   const [carriedOver, setCarriedOver] = useState(false);
+  const [openedLatest, setOpenedLatest] = useState(false);
   const [pageCount, setPageCount] = useState(1);
 
   const freshDocument = useCallback((profile: Profile, template: TemplateId, name: string, documents: CVDocument[], fictional = false) => {
@@ -99,28 +100,37 @@ export function BuilderPage() {
     if (initializedSearch.current === location.search) return;
     initializedSearch.current = location.search;
     const params = new URLSearchParams(location.search);
-    const existingId = params.get('id');
-    const requestedTemplate = params.get('template') as TemplateId | null;
     const hasStep = params.get('step') !== null;
     const requestedStep = Math.min(8, Math.max(0, Number.parseInt(params.get('step') || '', 10) || 0));
-    if (existingId) {
-      const existing = data.documents.find((item) => item.id === existingId);
+    const entry = resolveBuilderEntry(location.search, data.documents);
+    setCarriedOver(false);
+    setOpenedLatest(false);
+    if (entry.kind === 'existing') {
+      const existing = data.documents.find((item) => item.id === entry.id);
       if (existing) {
-        setCarriedOver(false);
         draftRef.current = existing;
         setDraft(existing);
         setCurrentStep(hasStep ? requestedStep : 0);
-      } else {
-        const fresh = freshDocument(data.profile, 'clear', 'Untitled CV', data.documents);
-        draftRef.current = fresh; setDraft(fresh); storeDraft(fresh);
       }
-    } else if (requestedTemplate && TEMPLATE_ORDER.includes(requestedTemplate)) {
-      const useSample = params.get('sample') === '1';
-      const fresh = freshDocument(useSample ? sampleProfile() : data.profile, requestedTemplate, useSample ? 'Sample CV' : 'Untitled CV', data.documents, useSample);
+    } else if (entry.kind === 'missing') {
+      const fresh = freshDocument(data.profile, 'clear', 'Untitled CV', data.documents);
+      draftRef.current = fresh; setDraft(fresh); storeDraft(fresh);
+    } else if (entry.kind === 'template') {
+      const fresh = freshDocument(entry.sample ? sampleProfile() : data.profile, entry.templateId, entry.sample ? 'Sample CV' : 'Untitled CV', data.documents, entry.sample);
       draftRef.current = fresh; setDraft(fresh); storeDraft(fresh);
       setCurrentStep(hasStep ? requestedStep : 7);
+    } else if (entry.kind === 'latest') {
+      // Returning visitor: open their most recent CV so editing is a single click.
+      const latest = data.documents.find((item) => item.id === entry.id);
+      if (latest) {
+        setOpenedLatest(true);
+        draftRef.current = latest;
+        setDraft(latest);
+        setCurrentStep(hasStep ? requestedStep : 0);
+      } else {
+        draftRef.current = null; setDraft(null); setPast([]); setFuture([]); setCurrentStep(0);
+      }
     } else {
-      setCarriedOver(false);
       draftRef.current = null; setDraft(null); setPast([]); setFuture([]); setCurrentStep(0);
     }
     setShowPreview(false);
@@ -218,7 +228,9 @@ export function BuilderPage() {
         <button type="button" className="disclosure-toggle" aria-expanded={setupOpen} onClick={() => setSetupOpen(!setupOpen)}><span>Optional setup questions</span><span>{setupOpen ? 'Hide' : 'Skip or set preferences'} <span aria-hidden="true">⌄</span></span></button>
         {setupOpen && <div className="setup-fields"><p>Everything here is optional. These preferences are saved with this CV, but they do not generate, score, or translate content. Date format changes how dates display.</p><div className="form-grid form-grid-two"><SelectField label="CV purpose" value={setup.purpose} onChange={(e) => setSetup({ ...setup, purpose: e.target.value as BuilderSetup['purpose'] })}>{['Job', 'Education', 'Volunteering', 'General'].map((value) => <option key={value}>{value}</option>)}</SelectField><Field label="Target role (optional)" value={setup.targetRole} onChange={(e) => setSetup({ ...setup, targetRole: e.target.value })} placeholder="e.g. Laboratory technician" /><Field label="Target country (optional)" value={setup.targetCountry} onChange={(e) => setSetup({ ...setup, targetCountry: e.target.value })} placeholder="Country" /><SelectField label="Document language" value={setup.documentLanguage} onChange={(e) => setSetup({ ...setup, documentLanguage: e.target.value })}><option>English</option></SelectField><SelectField label="Date format" value={setup.dateFormat} onChange={(e) => setSetup({ ...setup, dateFormat: e.target.value as DateFormat })}><option value="month-year">Month and year</option><option value="short-month">Short month and year</option><option value="numeric">MM/YYYY</option></SelectField></div><InlineNotice>English is the only interface language in this build. Your CV content stays exactly as you enter it; it is not automatically translated.</InlineNotice></div>}
       </div>
-      <p className="start-existing">Have CV versions saved here? <Link to="/my-cvs">Open your saved CVs</Link></p>
+      {savedCvCount === 0
+        ? <p className="start-existing">Made a CV here before? Saved CVs live in this browser only — <Link to="/my-cvs">check your saved CVs</Link>, or go to <Link to="/profile">Profile</Link> to import a JSON backup if you switched device, browser, or cleared your browsing data.</p>
+        : <p className="start-existing">Have CV versions saved here? <Link to="/my-cvs">Open your saved CVs</Link><span> · </span><Link to={'/builder?id=' + (latestSaved?.id ?? '')}>Edit your last CV</Link></p>}
     </div>;
   }
 
@@ -246,6 +258,7 @@ export function BuilderPage() {
       </aside>
 
       <main className="builder-editor-column">
+        {openedLatest && <InlineNotice tone="info">Editing your most recent saved CV. <Link to="/builder?new=1">Start a new CV</Link> or <Link to="/my-cvs">choose another version</Link>.</InlineNotice>}
         <div className="builder-editor-card">
           <div className="editor-heading"><div className="eyebrow">SECTION {String(currentStep + 1).padStart(2, '0')}</div><h1>{steps[currentStep].title}</h1><p>{steps[currentStep].description}</p></div>
           <div className="pro-tip"><Lightbulb size={15} /><span><strong>Pro tip: </strong>{STEP_TIPS[currentStep]}</span></div>

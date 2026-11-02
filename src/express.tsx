@@ -142,7 +142,7 @@ export function ExpressPage() {
 
   return (
     <main className="page-width standard-page express-page">
-      <BackLink to="/builder">Back to builder options</BackLink>
+      <BackLink to="/builder?new=1">Back to builder options</BackLink>
       <div className="express-head">
         <div>
           <div className="eyebrow">EXPRESS MODE · ABOUT 2 MINUTES</div>
@@ -260,7 +260,7 @@ export function ExpressPage() {
       </section>
 
       <div className="express-footer">
-        <Link to="/builder" className="button button-ghost"><ArrowLeft size={16} /> All options</Link>
+        <Link to="/builder?new=1" className="button button-ghost"><ArrowLeft size={16} /> All options</Link>
         <span className="express-footer-count">{essentials.done} of {essentials.total} essentials ready</span>
         <Button type="button" onClick={create}>Create my CV <ArrowRight size={16} /></Button>
       </div>

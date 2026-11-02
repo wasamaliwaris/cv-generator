@@ -89,7 +89,7 @@ export function LandingPage() {
           <div className="hero-overline"><span className="overline-rule" />YOUR WORK, YOUR WAY</div>
           <h1>A CV that<br /><em>moves with you.</em></h1>
           <p className="hero-subtitle">Create, tailor, preview, and download a professional CV — completely free, right in your browser.</p>
-          <div className="hero-actions"><Link to="/builder" className="button button-primary button-large">Create my CV free <ArrowRight size={18} /></Link><Link to="/templates" className="button button-outline button-large">Browse templates</Link></div>
+          <div className="hero-actions"><Link to="/builder?new=1" className="button button-primary button-large">Create my CV free <ArrowRight size={18} /></Link><Link to="/templates" className="button button-outline button-large">Browse templates</Link></div>
           <p className="hero-promise"><ShieldCheck size={15} />{message('promise')}</p>
           {latest && <Link to={`/builder?id=${encodeURIComponent(latest.id)}`} className="resume-card"><span className="resume-icon"><History size={16} /></span><span className="resume-text"><strong>Continue: {latest.name || 'Untitled CV'}</strong><small>Pick up where you left off</small></span><ArrowRight size={16} /></Link>}
           <Link to="/express" className="express-link"><Zap size={14} /> In a rush? Try Express mode — a CV in about 2 minutes</Link>
@@ -142,7 +142,7 @@ export function LandingPage() {
 
     <section className="last-cta-section"><div className="page-width"><Reveal><div className="last-cta">
       <div className="last-cta-copy"><div className="eyebrow">READY WHEN YOU ARE</div><h2>Your next role starts with a clear CV.</h2><p>Build it free, keep every version, and download a polished PDF — no signup, no watermark.</p></div>
-      <div className="last-cta-actions"><Link to="/builder" className="button button-light button-large">Create my CV free <ArrowRight size={18} /></Link><Link to="/templates" className="button button-outline button-large">Browse templates</Link></div>
+      <div className="last-cta-actions"><Link to="/builder?new=1" className="button button-light button-large">Create my CV free <ArrowRight size={18} /></Link><Link to="/templates" className="button button-outline button-large">Browse templates</Link></div>
     </div></Reveal></div></section>
 
   </main>;
