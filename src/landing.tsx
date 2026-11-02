@@ -1,11 +1,14 @@
-import { Link } from 'react-router-dom';
-import { ArrowDownRight, ArrowRight, BadgeCheck, BookOpen, BookmarkCheck, Check, Code2, Download, FileDown, FileText, GraduationCap, HeartPulse, History, Info, Languages, Layers3, ListChecks, LockKeyhole, Palette, PenLine, RefreshCw, ShieldCheck, Sparkles, Store, Zap } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowDownRight, ArrowRight, BadgeCheck, BookOpen, BookmarkCheck, Check, Code2, Download, FileDown, FileText, FolderOpen, GraduationCap, HeartPulse, Info, Languages, Layers3, ListChecks, LockKeyhole, Palette, PenLine, RefreshCw, ShieldCheck, Sparkles, Store, Zap } from 'lucide-react';
 import { TEMPLATE_META, TEMPLATE_ORDER, type TemplateId } from './model';
 import { useAppData } from './app-context';
 import { CountUp, Reveal } from './reveal';
 import { message } from './strings';
 import { SITE_URL } from './site';
 import { JsonLd, usePageMeta } from './ui';
+import { MAX_OPEN_BYTES, OPEN_FILE_ACCEPT, fileKind, openCvDocument, readBackupFile } from './cv-file-import';
 
 const features = [
   { icon: <BookmarkCheck size={20} />, title: 'A reusable profile', text: 'Keep the career details you use often in one local profile, ready for the next version.' },
@@ -75,8 +78,50 @@ const homeJsonLd = {
 };
 
 export function LandingPage() {
-  const { data } = useAppData();
-  const latest = [...data.documents].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+  const { data, setData } = useAppData();
+  const navigate = useNavigate();
+  const openFileRef = useRef<HTMLInputElement | null>(null);
+  const [openingFile, setOpeningFile] = useState(false);
+  const [openError, setOpenError] = useState('');
+  const [pendingId, setPendingId] = useState('');
+
+  useEffect(() => {
+    if (pendingId) navigate(`/builder?id=${encodeURIComponent(pendingId)}`);
+  }, [pendingId, navigate]);
+
+  const openFromDevice = async (file?: File) => {
+    if (!file) return;
+    setOpenError('');
+    setOpeningFile(true);
+    try {
+      const kind = fileKind(file);
+      if (kind === 'unknown') throw new Error('Choose a PDF, Word (.docx), text, or PathCV .json file.');
+      if (file.size > MAX_OPEN_BYTES) throw new Error('That file is larger than 20 MB. Choose a smaller file.');
+      if (kind === 'backup') {
+        const incoming = await readBackupFile(file);
+        const merged = [...incoming.documents.filter((doc) => !data.documents.some((item) => item.id === doc.id)), ...data.documents];
+        if (!merged.length) throw new Error('That backup does not contain any CV versions.');
+        const keepProfile = Boolean(data.profile.personal.firstName.trim() || data.profile.personal.email.trim());
+        flushSync(() => {
+          setData((current) => ({
+            ...current,
+            documents: [...incoming.documents.filter((doc) => !current.documents.some((item) => item.id === doc.id)), ...current.documents],
+            profile: keepProfile ? current.profile : incoming.profile,
+          }));
+        });
+        setPendingId([...merged].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0].id);
+      } else {
+        const { document: imported } = await openCvDocument(file);
+        flushSync(() => setData((current) => ({ ...current, documents: [imported, ...current.documents] })));
+        setPendingId(imported.id);
+      }
+    } catch (error) {
+      setOpenError(error instanceof Error ? error.message : 'That file could not be opened.');
+    } finally {
+      setOpeningFile(false);
+      if (openFileRef.current) openFileRef.current.value = '';
+    }
+  };
   usePageMeta({ title: 'PathCV \u2014 A CV that moves with you', description: 'Build your CV free. Download the PDF free. No signup, no watermark, no catch.', path: '/' });
   return <main className="landing-page"><JsonLd data={homeJsonLd} />
     <section className="hero-section">
@@ -91,7 +136,13 @@ export function LandingPage() {
           <p className="hero-subtitle">Create, tailor, preview, and download a professional CV — completely free, right in your browser.</p>
           <div className="hero-actions"><Link to="/builder?new=1" className="button button-primary button-large">Create my CV free <ArrowRight size={18} /></Link><Link to="/templates" className="button button-outline button-large">Browse templates</Link></div>
           <p className="hero-promise"><ShieldCheck size={15} />{message('promise')}</p>
-          {latest && <Link to={`/builder?id=${encodeURIComponent(latest.id)}`} className="resume-card"><span className="resume-icon"><History size={16} /></span><span className="resume-text"><strong>Continue: {latest.name || 'Untitled CV'}</strong><small>Pick up where you left off</small></span><ArrowRight size={16} /></Link>}
+          <button type="button" className="resume-card hero-open-cv" disabled={openingFile} onClick={() => openFileRef.current?.click()}>
+            <span className="resume-icon"><FolderOpen size={16} /></span>
+            <span className="resume-text"><strong>{openingFile ? 'Opening your file\u2026' : 'Browse a CV'}</strong><small>Open a PDF, Word, or text file from your device — it stays in your browser</small></span>
+            <ArrowRight size={16} />
+          </button>
+          <input ref={openFileRef} type="file" accept={OPEN_FILE_ACCEPT} className="sr-only" aria-label="Browse for a CV file on your device" onChange={(e) => { void openFromDevice(e.target.files?.[0]); }} />
+          {openError && <p className="hero-open-error" role="alert">{openError}</p>}
           <Link to="/express" className="express-link"><Zap size={14} /> In a rush? Try Express mode — a CV in about 2 minutes</Link>
           <div className="hero-stats">
             <div className="hero-stat"><strong>10</strong><span>Original templates</span></div>
