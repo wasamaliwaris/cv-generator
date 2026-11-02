@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Award, Briefcase, Check, CircleHelp, Copy, Download, Eye, EyeOff, FileDown, FilePlus2, FileText, GraduationCap, Languages, Lightbulb, Palette, Plus, Rocket, RotateCcw, RotateCw, Save, ShieldCheck, Sparkles, UserRound, Wrench, Zap } from 'lucide-react';
 import type { BuilderSetup, CVDocument, DateFormat, Profile, SectionKey, TemplateId } from './model';
-import { ACCENT_PALETTE, DEFAULT_SECTION_ORDER, SECTION_LABELS, TEMPLATE_META, TEMPLATE_ORDER, emptyProfile, newDocument, sampleProfile } from './model';
+import { ACCENT_PALETTE, DEFAULT_SECTION_ORDER, SECTION_LABELS, TEMPLATE_META, TEMPLATE_ORDER, emptyProfile, newDocument, sampleProfile, seedProfileFromLatest } from './model';
 import { useAppData } from './app-context';
 import { AdditionalSectionFields, EducationFields, LanguageFields, PersonalFields, SkillsFields, SummaryFields, WorkExperienceFields } from './forms';
 import { TemplateMini } from './landing';
@@ -71,7 +71,16 @@ export function BuilderPage() {
   const [setupOpen, setSetupOpen] = useState(false);
   const [setup, setSetup] = useState<SetupState>({ purpose: 'General', targetRole: '', targetCountry: '', documentLanguage: 'English', dateFormat: 'month-year' });
   const [message, setMessage] = useState('');
+  const [carriedOver, setCarriedOver] = useState(false);
   const [pageCount, setPageCount] = useState(1);
+
+  const freshDocument = useCallback((profile: Profile, template: TemplateId, name: string, documents: CVDocument[], fictional = false) => {
+    const seeded = fictional ? { profile, carried: false } : seedProfileFromLatest(profile, documents);
+    const doc = newDocument(seeded.profile, template, name);
+    if (doc.profileSnapshot.personal.photoDataUrl) doc.showPhoto = true;
+    setCarriedOver(seeded.carried);
+    return doc;
+  }, []);
 
   const storeDraft = useCallback((next: CVDocument) => {
     const stamped = { ...next, updatedAt: new Date().toISOString() };
@@ -91,23 +100,25 @@ export function BuilderPage() {
     if (existingId) {
       const existing = data.documents.find((item) => item.id === existingId);
       if (existing) {
+        setCarriedOver(false);
         draftRef.current = existing;
         setDraft(existing);
         setCurrentStep(hasStep ? requestedStep : 0);
       } else {
-        const fresh = newDocument(data.profile, 'clear');
+        const fresh = freshDocument(data.profile, 'clear', 'Untitled CV', data.documents);
         draftRef.current = fresh; setDraft(fresh); storeDraft(fresh);
       }
     } else if (requestedTemplate && TEMPLATE_ORDER.includes(requestedTemplate)) {
       const useSample = params.get('sample') === '1';
-      const fresh = newDocument(useSample ? sampleProfile() : data.profile, requestedTemplate, useSample ? 'Sample CV' : 'Untitled CV');
+      const fresh = freshDocument(useSample ? sampleProfile() : data.profile, requestedTemplate, useSample ? 'Sample CV' : 'Untitled CV', data.documents, useSample);
       draftRef.current = fresh; setDraft(fresh); storeDraft(fresh);
       setCurrentStep(hasStep ? requestedStep : 7);
     } else {
+      setCarriedOver(false);
       draftRef.current = null; setDraft(null); setPast([]); setFuture([]); setCurrentStep(0);
     }
     setShowPreview(false);
-  }, [location.search, data.documents, data.profile, storeDraft]);
+  }, [location.search, data.documents, data.profile, storeDraft, freshDocument]);
 
   const commit = (mutate: (current: CVDocument) => CVDocument) => {
     const current = draftRef.current;
@@ -159,8 +170,8 @@ export function BuilderPage() {
     return () => window.removeEventListener('keydown', onKeyDown);
   });
 
-  const begin = (profile: Profile, template: TemplateId = 'clear') => {
-    const doc = newDocument(profile, template, 'My CV');
+  const begin = (profile: Profile, template: TemplateId = 'clear', fictional = false) => {
+    const doc = freshDocument(profile, template, 'My CV', data.documents, fictional);
     doc.dateFormat = setup.dateFormat;
     doc.setup = { purpose: setup.purpose, targetRole: setup.targetRole.trim(), targetCountry: setup.targetCountry.trim(), documentLanguage: setup.documentLanguage };
     setPast([]); setFuture([]); setCurrentStep(0); setMessage(''); setShowPreview(false);
@@ -176,13 +187,14 @@ export function BuilderPage() {
   const progress = draft ? Math.round(((currentStep + 1) / steps.length) * 100) : 0;
   const completedCount = draft ? steps.slice(0, 7).filter((_, index) => isComplete(index, draft)).length : 0;
   const score = useMemo(() => (draft ? scoreCV(draft).score : 0), [draft]);
+  const savedCvCount = data.documents.length;
 
   if (!draft) {
     return <div className="builder-start page-width">
       <div className="builder-start-copy"><div className="eyebrow">PathCV builder</div><h1>Start with what you have.</h1><p>Build a clear, editable CV in small steps. Your work saves in this browser as you go.</p><div className="start-trust"><span><ShieldCheck size={16} /> Free PDF, no account</span><span><Save size={16} /> Local autosave</span></div></div>
       <div className="start-choice-grid">
-        <article className="start-choice-card"><div className="choice-icon"><FilePlus2 size={21} /></div><h2>Start from scratch</h2><p>Begin with a blank CV and add only the details you want to share.</p><Button type="button" onClick={() => begin(emptyProfile())}>Start from scratch <ArrowRight size={16} /></Button></article>
-        <article className="start-choice-card sample-choice"><div className="choice-icon"><FileText size={21} /></div><h2>Use a sample CV</h2><p>Explore the editor with fictional example content. Replace or remove every detail.</p><Button type="button" variant="secondary" onClick={() => begin(sampleProfile())}>Use a sample CV <ArrowRight size={16} /></Button><span className="fictional-stamp">FICTIONAL SAMPLE</span></article>
+        <article className="start-choice-card"><div className="choice-icon"><FilePlus2 size={21} /></div><h2>Start from scratch</h2><p>Begin with a blank CV and add only the details you want to share.{savedCvCount > 0 ? ' Your name, contact details, and photo are copied over from your most recent CV.' : ''}</p><Button type="button" onClick={() => begin(emptyProfile())}>Start from scratch <ArrowRight size={16} /></Button></article>
+        <article className="start-choice-card sample-choice"><div className="choice-icon"><FileText size={21} /></div><h2>Use a sample CV</h2><p>Explore the editor with fictional example content. Replace or remove every detail.</p><Button type="button" variant="secondary" onClick={() => begin(sampleProfile(), 'clear', true)}>Use a sample CV <ArrowRight size={16} /></Button><span className="fictional-stamp">FICTIONAL SAMPLE</span></article>
         <article className="start-choice-card express-choice"><div className="choice-icon"><Zap size={21} /></div><h2>Express · 2 minutes</h2><p>Answer the essentials on one page and get an instant CV. Perfect for first-timers.</p><Link to="/express" className="button button-primary">Try Express <ArrowRight size={16} /></Link><span className="fictional-stamp">FASTEST</span></article>
       </div>
       <div className="kit-strip"><div className="kit-strip-head"><span>Popular role kits</span><small>Start the full builder with an editable headline, summary &amp; skills</small></div><div className="kit-strip-row">{ROLE_KITS.map((k) => <button key={k.id} type="button" className="kit-strip-btn" onClick={() => begin(profileFromKit(k))}>{k.label}</button>)}</div></div>
@@ -222,6 +234,7 @@ export function BuilderPage() {
           <div className="editor-heading"><div className="eyebrow">SECTION {String(currentStep + 1).padStart(2, '0')}</div><h1>{steps[currentStep].title}</h1><p>{steps[currentStep].description}</p></div>
           <div className="pro-tip"><Lightbulb size={15} /><span><strong>Pro tip: </strong>{STEP_TIPS[currentStep]}</span></div>
           {message && <InlineNotice tone="warning">{message}</InlineNotice>}
+          {currentStep === 0 && carriedOver && <InlineNotice tone="info">Personal details were copied from your most recent CV so you do not retype them. Edit or replace anything here.</InlineNotice>}
           {currentStep === 0 && <PersonalFields profile={profile} onChange={updateProfileSnapshot} onPhotoAdded={() => commit((current) => (current.showPhoto ? current : { ...current, showPhoto: true }))} />}
           {currentStep === 1 && <SummaryFields profile={profile} onChange={updateProfileSnapshot} />}
           {currentStep === 2 && <WorkExperienceFields profile={profile} onChange={updateProfileSnapshot} />}

@@ -261,6 +261,27 @@ export function newDocument(profile: Profile, templateId: TemplateId = 'clear', 
   };
 }
 
+const PERSONAL_KEYS: (keyof PersonalDetails)[] = [
+  'firstName', 'lastName', 'headline', 'email', 'phone', 'phoneCountryCode', 'presentAddress',
+  'city', 'region', 'country', 'postalCode', 'dateOfBirth', 'maritalStatus', 'nationality', 'religion',
+  'website', 'linkedin', 'portfolio', 'otherLink', 'photoDataUrl',
+];
+
+/** Fill only the personal fields a new CV is missing, using the most recently edited saved CV. */
+export function seedProfileFromLatest(profile: Profile, documents: CVDocument[]): { profile: Profile; carried: boolean } {
+  const latest = [...documents].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+  if (!latest?.profileSnapshot?.personal) return { profile, carried: false };
+  const source = latest.profileSnapshot.personal;
+  const personal: PersonalDetails = { ...profile.personal };
+  let carried = false;
+  PERSONAL_KEYS.forEach((key) => {
+    const current = String(personal[key] ?? '').trim();
+    const previous = String(source[key] ?? '').trim();
+    if (!current && previous) { personal[key] = source[key]; carried = true; }
+  });
+  return { profile: carried ? { ...profile, personal } : profile, carried };
+}
+
 export function blankCoverLetter(): CoverLetterData {
   return {
     recipient: '', organization: '', role: '', date: new Date().toISOString().slice(0, 10),
