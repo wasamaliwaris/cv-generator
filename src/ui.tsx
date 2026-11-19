@@ -35,6 +35,7 @@ export function SiteHeader() {
         <nav className={`main-nav ${open ? 'main-nav-open' : ''}`} aria-label="Main navigation">
           <NavLink to="/#how-it-works" end onClick={close}>{message('nav').howItWorks}</NavLink>
           <NavLink to="/templates" onClick={close}>{message('nav').templates}</NavLink>
+          <NavLink to="/ai-cv" onClick={close}>AI CV</NavLink>
           <NavLink to="/resources" onClick={close}>Resources</NavLink>
           <NavLink to="/my-cvs" onClick={close}>My CVs</NavLink>
           <NavLink to="/help" onClick={close}>{message('nav').help}</NavLink>
@@ -67,7 +68,7 @@ export function Footer() {
       <div className="page-width footer-inner">
         <div className="footer-brand">
           <Link to="/" className="brand"><span className="brand-mark" aria-hidden="true">P</span><span>Path<span className="brand-light">CV</span></span></Link>
-          <p>Make your next step your own. Free forever — your data never leaves this device.</p>
+          <p>Make your next step your own. Free manual editing and downloads. Optional AI assistance.</p>
           <div className="footer-badges"><span className="footer-badge">No signup</span><span className="footer-badge">No watermark</span><span className="footer-badge">Free PDF</span></div>
           <SocialLinks className="footer-social" />
         </div>

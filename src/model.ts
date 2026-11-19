@@ -131,6 +131,7 @@ export interface BuilderSetup {
 
 export interface CVDocument {
   id: string;
+  aiGenerationId?: string;
   name: string;
   setup: BuilderSetup;
   templateId: TemplateId;
@@ -383,7 +384,9 @@ export function dateToLabel(date: MonthDate, format: DateFormat): string {
   const options: Intl.DateTimeFormatOptions = format === 'short-month'
     ? { month: 'short', year: 'numeric' }
     : { month: 'long', year: 'numeric' };
-  return new Intl.DateTimeFormat(locale, options).format(new Date(date.year, month, 1));
+  const value = new Date(date.year, month, 1);
+  try { return new Intl.DateTimeFormat(locale, options).format(value); }
+  catch { return new Intl.DateTimeFormat(undefined, options).format(value); }
 }
 
 export function dateRange(start: MonthDate, end: MonthDate, current: boolean, format: DateFormat): string {
