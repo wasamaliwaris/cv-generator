@@ -39,7 +39,7 @@ function xmlToText(xml: string): string {
 
 async function readDocx(file: File): Promise<string> {
   const { unzipSync, strFromU8 } = await import('fflate');
-  const zip = unzipSync(new Uint8Array(await file.arrayBuffer()));
+  const zip = unzipSync(new Uint8Array(await file.arrayBuffer()), { filter: (entry) => entry.name === 'word/document.xml' && entry.originalSize <= MAX_OPEN_BYTES });
   const entry = zip['word/document.xml'];
   if (!entry) throw new Error('That Word file could not be read. Try saving it as a PDF and opening that instead.');
   return xmlToText(strFromU8(entry));
@@ -72,7 +72,7 @@ async function readPdf(file: File): Promise<string> {
   const pdfjs = await import('pdfjs-dist');
   const worker = await import('pdfjs-dist/build/pdf.worker.min.mjs?url').catch(() => null);
   if (worker && typeof worker.default === 'string') pdfjs.GlobalWorkerOptions.workerSrc = worker.default;
-  const loadingTask = pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) });
+  const loadingTask = pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false });
   const pdf = await loadingTask.promise;
   const pages: string[] = [];
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
@@ -175,11 +175,17 @@ export function draftFromText(rawText: string, fileName: string): DraftFromText 
   return { document, notice };
 }
 
-/** Reads a PDF, Word, or text file and returns an editable draft. */
-export async function openCvDocument(file: File): Promise<DraftFromText> {
+/** Extracts readable text without uploading the file. */
+export async function readCvText(file: File): Promise<string> {
   const kind = fileKind(file);
-  if (kind === 'unknown') throw new Error('Choose a PDF, Word (.docx), text, or PathCV .json file.');
+  if (kind === 'unknown' || kind === 'backup') throw new Error('Choose a PDF, Word (.docx), or text file.');
   if (file.size > MAX_OPEN_BYTES) throw new Error('That file is larger than 20 MB. Choose a smaller file.');
   const text = kind === 'pdf' ? await readPdf(file) : kind === 'docx' ? await readDocx(file) : await file.text();
-  return draftFromText(text, file.name);
+  if (!text.trim()) throw new Error('No readable text was found. Try a text-based PDF or a Word file.');
+  return text;
+}
+
+/** Reads a PDF, Word, or text file and returns an editable draft. */
+export async function openCvDocument(file: File): Promise<DraftFromText> {
+  return draftFromText(await readCvText(file), file.name);
 }

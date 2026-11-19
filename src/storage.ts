@@ -1,5 +1,5 @@
 import {
-  ACCENT_PALETTE, DEFAULT_SECTION_ORDER, OPTIONAL_SECTION_KEYS, blankCoverLetter,
+  ACCENT_PALETTE, TEMPLATE_ORDER, DEFAULT_SECTION_ORDER, OPTIONAL_SECTION_KEYS, blankCoverLetter,
   emptyProfile, type AppData, type BuilderSetup, type CVDocument, type CoverLetterData, type DateFormat, type EducationEntry,
   type FontChoice, type LanguageEntry, type MonthDate, type OptionalSectionEntry, type Profile,
   type SectionKey, type SkillEntry, type TemplateId, type WorkExperience,
@@ -68,7 +68,7 @@ function normalizeProfile(value: unknown): Profile {
 
 function normalizeDocument(value: unknown): CVDocument | null {
   if (!isRecord(value) || typeof value.id !== 'string') return null;
-  const templates: TemplateId[] = ['clear', 'modern', 'compact', 'editorial'];
+  const templates = TEMPLATE_ORDER;
   const fonts: FontChoice[] = ['system', 'humanist', 'serif'];
   const dates: DateFormat[] = ['month-year', 'short-month', 'numeric'];
   const templateId = templates.includes(value.templateId as TemplateId) ? value.templateId as TemplateId : 'clear';
@@ -82,6 +82,7 @@ function normalizeDocument(value: unknown): CVDocument | null {
   const purpose = ['Job', 'Education', 'Volunteering', 'General'].includes(String(setupRaw.purpose)) ? setupRaw.purpose as BuilderSetup['purpose'] : 'General';
   return {
     id: value.id,
+    aiGenerationId: text(value.aiGenerationId) || undefined,
     name: text(value.name) || 'Untitled CV',
     setup: { purpose, targetRole: text(setupRaw.targetRole), targetCountry: text(setupRaw.targetCountry), documentLanguage: text(setupRaw.documentLanguage) || 'English' },
     templateId,
@@ -99,7 +100,7 @@ function normalizeDocument(value: unknown): CVDocument | null {
 function normalizeCover(value: unknown): CoverLetterData {
   const base = blankCoverLetter();
   if (!isRecord(value)) return base;
-  const templates: TemplateId[] = ['clear', 'modern', 'compact', 'editorial'];
+  const templates = TEMPLATE_ORDER;
   return {
     recipient: text(value.recipient), organization: text(value.organization), role: text(value.role), date: text(value.date),
     greeting: text(value.greeting), opening: text(value.opening), body: text(value.body), closing: text(value.closing), signature: text(value.signature),
