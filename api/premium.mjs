@@ -1,7 +1,7 @@
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import Stripe from 'stripe';
 import { z } from 'zod';
-import { database, store, PremiumError, REVISION_LIMIT } from '../server/premium-store.mjs';
+import { database, store, checkoutMatches, PremiumError, REVISION_LIMIT } from '../server/premium-store.mjs';
 import { generate, generationInput, revisionInput } from '../server/premium-ai.mjs';
 
 const cookieName = 'pathcv_premium';
@@ -52,6 +52,20 @@ export function premiumHandler(env = process.env, dependencies = {}) {
     const { rows: [settings] } = await ledger.q('SELECT usd_cents FROM premium_settings WHERE id=true');
     return config.list.map((currency) => ({ currency, amount: Math.max(minimums[currency], Math.ceil(settings.usd_cents * currencies[currency])) }));
   };
+  async function paymentStatus(payment, session) {
+    if (payment.state === 'paid') return { state: 'paid' };
+    if (payment.state !== 'pending') return { state: 'closed' };
+    if (!session && !payment.session_id) return { state: 'not_started' };
+    session ??= await stripe.checkout.sessions.retrieve(payment.session_id);
+    if (!checkoutMatches(session, payment)) throw new PremiumError(503, 'We could not verify the checkout details. Do not pay again until payment status is confirmed.');
+    if (session.payment_status === 'paid' || session.status === 'expired') {
+      const paid = await ledger.recordPayment(session);
+      if (paid) return { state: 'paid' };
+      return { state: session.status === 'expired' ? 'closed' : 'processing' };
+    }
+    if (session.status === 'open' && session.url) return { state: 'open', url: session.url, price: { amount: payment.amount, currency: payment.currency } };
+    return { state: 'processing' };
+  }
   return async (req, res) => {
     const json = (status, value) => {
       res.statusCode = status;
@@ -69,7 +83,9 @@ export function premiumHandler(env = process.env, dependencies = {}) {
         let event;
         try { event = stripe.webhooks.constructEvent(payload, req.headers['stripe-signature'], env.STRIPE_WEBHOOK_SECRET); }
         catch { throw new PremiumError(400, 'Invalid webhook signature.'); }
-        if (['checkout.session.completed', 'checkout.session.async_payment_succeeded', 'checkout.session.expired'].includes(event.type)) await ledger.recordPayment(event.data.object);
+        if (['checkout.session.completed', 'checkout.session.async_payment_succeeded', 'checkout.session.expired', 'checkout.session.async_payment_failed'].includes(event.type)) {
+          await ledger.recordPayment(event.data.object, event.type === 'checkout.session.async_payment_failed');
+        }
         if (event.type === 'charge.refunded' && event.data.object.refunded && typeof event.data.object.payment_intent === 'string') {
           const { rows: [payment] } = await ledger.q('SELECT id,wallet FROM premium_payments WHERE intent_id=$1', [event.data.object.payment_intent]);
           if (payment) await ledger.tx(payment.wallet, async (q) => {
@@ -98,33 +114,38 @@ export function premiumHandler(env = process.env, dependencies = {}) {
       if (action === 'checkout') {
         const price = (await priceList()).find(({ currency }) => currency === body?.currency);
         if (!price) throw new PremiumError(400, 'This currency is not supported.');
-        await ledger.q('INSERT INTO premium_wallets (id) VALUES ($1) ON CONFLICT DO NOTHING', [wallet]);
-        const id = randomUUID();
-        await ledger.tx(wallet, async (q) => {
-          const { rowCount } = await q("SELECT 1 FROM premium_payments WHERE wallet=$1 AND created_at > now() - interval '10 minutes'", [wallet]);
-          if (rowCount >= 5) throw new PremiumError(429, 'Too many checkout attempts. Try again in a few minutes.');
-          await q('INSERT INTO premium_payments (id,wallet,amount,currency) VALUES ($1,$2,$3,$4)', [id, wallet, price.amount, price.currency]);
-        });
-        try {
-          const session = await stripe.checkout.sessions.create({
-            mode: 'payment', payment_method_types: ['card'], client_reference_id: id, metadata: { payment: id, wallet },
-            line_items: [{ quantity: 1, price_data: { currency: price.currency.toLowerCase(), unit_amount: price.amount, product_data: { name: 'PathCV · 1 AI CV credit' } } }],
-            success_url: `${config.appUrl}/ai-cv?checkout=success&session_id={CHECKOUT_SESSION_ID}`, cancel_url: `${config.appUrl}/ai-cv?checkout=cancelled`,
-          }, { idempotencyKey: `pathcv-checkout-${id}` });
-          if (!session.url) throw new Error('Missing checkout URL');
-          await ledger.q('UPDATE premium_payments SET session_id=$2 WHERE id=$1', [id, session.id]);
-          return json(200, { url: session.url });
-        } catch {
-          await ledger.q("UPDATE premium_payments SET state='expired' WHERE id=$1 AND state='pending' AND session_id IS NULL", [id]);
-          throw new PremiumError(503, 'Checkout is temporarily unavailable. Please try again.');
+        if (body.quotedAmount !== undefined && body.quotedAmount !== price.amount) throw new PremiumError(409, 'The price changed. Review the updated total before continuing.');
+        const payment = await ledger.reserveCheckout(wallet, price);
+        let result;
+        if (payment.session_id) {
+          result = await paymentStatus(payment);
+        } else {
+          try {
+            const { id } = payment;
+            const session = await stripe.checkout.sessions.create({
+              mode: 'payment', client_reference_id: id, metadata: { payment: id, wallet },
+              adaptive_pricing: { enabled: false },
+              line_items: [{ quantity: 1, price_data: { currency: payment.currency.toLowerCase(), unit_amount: payment.amount, product_data: { name: 'PathCV · 1 AI CV credit' } } }],
+              success_url: `${config.appUrl}/ai-cv?checkout=success&session_id={CHECKOUT_SESSION_ID}`, cancel_url: `${config.appUrl}/ai-cv?checkout=cancelled&payment_id=${id}`,
+            }, { idempotencyKey: `pathcv-checkout-${id}` });
+            result = await paymentStatus(payment, session);
+            await ledger.q('UPDATE premium_payments SET session_id=$2 WHERE id=$1 AND session_id IS NULL', [id, session.id]);
+          } catch (error) {
+            if (error instanceof PremiumError) throw error;
+            // Keep the existing reservation after ambiguous Stripe errors so a retry uses the same idempotency key.
+            throw new PremiumError(503, 'Checkout could not be opened. Try again to resume the same checkout.');
+          }
         }
+        return json(200, { ...result, paymentId: payment.id, ...await ledger.summary(wallet) });
       }
       if (action === 'confirm') {
-        if (typeof body?.sessionId !== 'string' || !/^cs_[\w]+$/.test(body.sessionId) || body.sessionId.length > 140) throw new PremiumError(400, 'Invalid checkout session.');
-        const { rows: [owned] } = await ledger.q('SELECT state FROM premium_payments WHERE wallet=$1 AND session_id=$2', [wallet, body.sessionId]);
+        const byPayment = uuid.safeParse(body?.paymentId);
+        const sessionId = typeof body?.sessionId === 'string' && /^cs_[\w]+$/.test(body.sessionId) && body.sessionId.length <= 140 ? body.sessionId : null;
+        if (!byPayment.success && !sessionId) throw new PremiumError(400, 'Invalid checkout reference.');
+        const owned = await ledger.findPayment(wallet, { paymentId: byPayment.success ? byPayment.data : null, sessionId });
         if (!owned) throw new PremiumError(404, 'Open the workspace in the browser you used to pay.');
-        const paid = owned.state === 'paid' || (owned.state === 'pending' && await ledger.recordPayment(await stripe.checkout.sessions.retrieve(body.sessionId)));
-        return json(200, { paid, ...await ledger.summary(wallet) });
+        const result = await paymentStatus(owned);
+        return json(200, { ...result, paymentId: owned.id, paid: result.state === 'paid', ...await ledger.summary(wallet) });
       }
       if (action === 'generate') {
         const parsed = (body?.mode === 'revise' ? revisionInput : generationInput).safeParse(body);

@@ -156,8 +156,12 @@ export function LandingPage() {
           <div className="hero-badge"><span className="hero-badge-dot"><Sparkles size={12} /></span> Free manual builder · No signup needed</div>
           <div className="hero-overline"><span className="overline-rule" />YOUR WORK, YOUR WAY</div>
           <h1>A CV that<br /><em>moves with you.</em></h1>
-          <p className="hero-subtitle">Create, tailor, preview, and download a professional CV — completely free, right in your browser.</p>
-          <div className="hero-actions"><Link to="/builder?new=1" className="button button-primary button-large">Create my CV free <ArrowRight size={18} /></Link><Link to="/templates" className="button button-outline button-large">Browse templates</Link></div>
+          <p className="hero-subtitle">Build and download a professional CV for free, or get a head start with the premium AI generator.</p>
+          <div className="hero-actions">
+            <Link to="/builder?new=1" className="button button-primary button-large">Create CV for free <ArrowRight size={18} /></Link>
+            <Link to="/ai-cv" className="button button-outline button-large hero-ai-button"><Sparkles size={17} /> Create CV using AI <span className="premium-pill">Premium</span></Link>
+          </div>
+          <Link to="/templates" className="hero-template-link">Browse templates <ArrowRight size={14} /></Link>
           <p className="hero-promise"><ShieldCheck size={15} />{message('promise')}</p>
           <button type="button" className="resume-card hero-open-cv" disabled={openingFile} onClick={() => openFileRef.current?.click()}>
             <span className="resume-icon"><FolderOpen size={16} /></span>

@@ -7,6 +7,8 @@ export class PremiumError extends Error {
   constructor(status, message) { super(message); this.status = status; }
 }
 export function database(url) { return new pg.Pool({ connectionString: url, max: 4, connectionTimeoutMillis: 4000 }); }
+export const checkoutMatches = (session, payment) => session.metadata?.payment === payment.id && session.metadata?.wallet === payment.wallet && session.mode === 'payment' && session.amount_total === payment.amount && session.currency?.toUpperCase() === payment.currency && (!payment.session_id || payment.session_id === session.id);
+
 export function store(pool) {
   const q = (sql, params) => pool.query(sql, params);
   async function tx(wallet, work) {
@@ -34,16 +36,34 @@ export function store(pool) {
         return { credits: row.credits, payments };
       });
     },
-    async recordPayment(session) {
+    async reserveCheckout(wallet, { currency, amount }) {
+      await q('INSERT INTO premium_wallets (id) VALUES ($1) ON CONFLICT DO NOTHING', [wallet]);
+      return tx(wallet, async (query) => {
+        await query("UPDATE premium_payments SET state='expired' WHERE wallet=$1 AND state='pending' AND session_id IS NULL AND created_at <= now() - interval '23 hours'", [wallet]);
+        const { rows: [existing] } = await query("SELECT * FROM premium_payments WHERE wallet=$1 AND state='pending' AND currency=$2 AND amount=$3 ORDER BY created_at DESC LIMIT 1", [wallet, currency, amount]);
+        if (existing) return existing;
+        const { rowCount } = await query("SELECT 1 FROM premium_payments WHERE wallet=$1 AND created_at > now() - interval '10 minutes'", [wallet]);
+        if (rowCount >= 5) throw new PremiumError(429, 'Too many checkout attempts. Try again in a few minutes.');
+        const { rows: [payment] } = await query('INSERT INTO premium_payments (id,wallet,amount,currency) VALUES ($1,$2,$3,$4) RETURNING *', [randomUUID(), wallet, amount, currency]);
+        return payment;
+      });
+    },
+    async findPayment(wallet, { paymentId, sessionId }) {
+      const { rows: [payment] } = paymentId
+        ? await q('SELECT * FROM premium_payments WHERE wallet=$1 AND id=$2', [wallet, paymentId])
+        : await q('SELECT * FROM premium_payments WHERE wallet=$1 AND session_id=$2', [wallet, sessionId]);
+      return payment;
+    },
+    async recordPayment(session, failed = false) {
       const { rows: [payment] } = await q('SELECT * FROM premium_payments WHERE id::text=$1 AND wallet::text=$2', [session.metadata?.payment ?? '', session.metadata?.wallet ?? '']);
-      if (!payment || session.mode !== 'payment' || session.amount_total !== payment.amount || session.currency?.toUpperCase() !== payment.currency || (payment.session_id && payment.session_id !== session.id)) return false;
-      if (session.payment_status !== 'paid' && session.status !== 'expired') return false;
+      if (!payment || !checkoutMatches(session, payment)) return false;
+      if (session.payment_status !== 'paid' && session.status !== 'expired' && !failed) return false;
       return tx(payment.wallet, async (query) => {
         if (session.payment_status === 'paid' && typeof session.payment_intent === 'string') {
           const { rowCount } = await query("UPDATE premium_payments SET state='paid', session_id=$2, intent_id=$3 WHERE id=$1 AND state IN ('pending','expired') AND (session_id IS NULL OR session_id=$2)", [payment.id, session.id, session.payment_intent]);
           if (rowCount) await query('INSERT INTO premium_credits (id,wallet,payment) VALUES ($1,$2,$3)', [randomUUID(), payment.wallet, payment.id]);
-        } else {
-          await query("UPDATE premium_payments SET state='expired' WHERE id=$1 AND state='pending'", [payment.id]);
+        } else if (session.status === 'expired' || failed) {
+          await query("UPDATE premium_payments SET state='expired' WHERE id=$1 AND state='pending' AND (session_id IS NULL OR session_id=$2)", [payment.id, session.id]);
         }
         const { rows: [record] } = await query('SELECT state FROM premium_payments WHERE id=$1', [payment.id]);
         return record.state === 'paid';
