@@ -36,15 +36,15 @@ export function store(pool) {
         return { credits: row.credits, payments };
       });
     },
-    async reserveCheckout(wallet, { currency, amount }) {
+    async reserveCheckout(wallet, { currency, amount }, provider = 'stripe') {
       await q('INSERT INTO premium_wallets (id) VALUES ($1) ON CONFLICT DO NOTHING', [wallet]);
       return tx(wallet, async (query) => {
         await query("UPDATE premium_payments SET state='expired' WHERE wallet=$1 AND state='pending' AND session_id IS NULL AND created_at <= now() - interval '23 hours'", [wallet]);
-        const { rows: [existing] } = await query("SELECT * FROM premium_payments WHERE wallet=$1 AND state='pending' AND currency=$2 AND amount=$3 ORDER BY created_at DESC LIMIT 1", [wallet, currency, amount]);
+        const { rows: [existing] } = await query("SELECT * FROM premium_payments WHERE wallet=$1 AND state='pending' AND currency=$2 AND amount=$3 AND provider=$4 ORDER BY created_at DESC LIMIT 1", [wallet, currency, amount, provider]);
         if (existing) return existing;
         const { rowCount } = await query("SELECT 1 FROM premium_payments WHERE wallet=$1 AND created_at > now() - interval '10 minutes'", [wallet]);
         if (rowCount >= 5) throw new PremiumError(429, 'Too many checkout attempts. Try again in a few minutes.');
-        const { rows: [payment] } = await query('INSERT INTO premium_payments (id,wallet,amount,currency) VALUES ($1,$2,$3,$4) RETURNING *', [randomUUID(), wallet, amount, currency]);
+        const { rows: [payment] } = await query('INSERT INTO premium_payments (id,wallet,amount,currency,provider) VALUES ($1,$2,$3,$4,$5) RETURNING *', [randomUUID(), wallet, amount, currency, provider]);
         return payment;
       });
     },
@@ -54,8 +54,41 @@ export function store(pool) {
         : await q('SELECT * FROM premium_payments WHERE wallet=$1 AND session_id=$2', [wallet, sessionId]);
       return payment;
     },
+    async findSafepayPayment(tracker) {
+      const { rows: [payment] } = await q("SELECT * FROM premium_payments WHERE provider='safepay' AND session_id=$1", [tracker]);
+      return payment;
+    },
+    async attachSafepayTracker(payment, createTracker) {
+      return tx(payment.wallet, async (query) => {
+        const { rows: [current] } = await query("SELECT * FROM premium_payments WHERE id=$1 AND provider='safepay'", [payment.id]);
+        if (current.session_id || current.state !== 'pending') return current;
+        // Store one tracker before issuing a hosted checkout URL. Concurrent requests reuse it.
+        const tracker = await createTracker(current);
+        await query('UPDATE premium_payments SET session_id=$2 WHERE id=$1', [current.id, tracker]);
+        return { ...current, session_id: tracker };
+      });
+    },
+    async recordSafepayStatus(payment, state) {
+      return tx(payment.wallet, async (query) => {
+        const { rows: [current] } = await query("SELECT id,state FROM premium_payments WHERE id=$1 AND provider='safepay' AND session_id=$2", [payment.id, payment.session_id]);
+        if (!current) return 'closed';
+        if (state === 'refunded') {
+          await query("UPDATE premium_payments SET state='refunded' WHERE id=$1", [current.id]);
+          await query("UPDATE premium_credits SET state='revoked' WHERE payment=$1", [current.id]);
+          return 'closed';
+        }
+        if (current.state === 'paid') return 'paid';
+        if (state === 'paid' && ['pending', 'expired'].includes(current.state)) {
+          await query("UPDATE premium_payments SET state='paid' WHERE id=$1", [current.id]);
+          await query('INSERT INTO premium_credits (id,wallet,payment) VALUES ($1,$2,$3) ON CONFLICT (payment) DO NOTHING', [randomUUID(), payment.wallet, current.id]);
+          return 'paid';
+        }
+        if (state === 'closed' && current.state === 'pending') await query("UPDATE premium_payments SET state='expired' WHERE id=$1", [current.id]);
+        return 'closed';
+      });
+    },
     async recordPayment(session, failed = false) {
-      const { rows: [payment] } = await q('SELECT * FROM premium_payments WHERE id::text=$1 AND wallet::text=$2', [session.metadata?.payment ?? '', session.metadata?.wallet ?? '']);
+      const { rows: [payment] } = await q('SELECT * FROM premium_payments WHERE id::text=$1 AND wallet::text=$2 AND provider=$3', [session.metadata?.payment ?? '', session.metadata?.wallet ?? '', 'stripe']);
       if (!payment || !checkoutMatches(session, payment)) return false;
       if (session.payment_status !== 'paid' && session.status !== 'expired' && !failed) return false;
       return tx(payment.wallet, async (query) => {

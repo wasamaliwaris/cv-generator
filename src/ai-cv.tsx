@@ -30,7 +30,7 @@ const modes = [
 const draftKey = 'pathcv-premium-checkout-draft';
 const pendingKey = 'pathcv-premium-generation';
 const currencyKey = 'pathcv-premium-currency';
-type PaymentReference = { sessionId: string } | { paymentId: string };
+type PaymentReference = ({ sessionId: string } | { paymentId: string }) & { checkOnly?: boolean };
 type PaymentFeedback = { tone: 'info' | 'success' | 'error'; message: string; resume?: { url: string; price: Price }; processing?: boolean };
 const paymentLabels = { paid: 'Paid', pending: 'Not yet confirmed', expired: 'Closed · unpaid', refunded: 'Refunded' } as const;
 function paymentFeedback(result: CheckoutResult): PaymentFeedback {
@@ -120,7 +120,7 @@ export function AICVPage() {
       setPayment({ tone: 'info', message: 'You left checkout. Check payment history to see whether you can resume it.' });
       return;
     }
-    const reference = checkout === 'success' && checkoutId ? { sessionId: checkoutId } : checkout === 'cancelled' && cancelledPaymentId ? { paymentId: cancelledPaymentId } : null;
+    const reference = checkout === 'success' && checkoutId ? { sessionId: checkoutId } : (checkout === 'success' || checkout === 'cancelled') && cancelledPaymentId ? { paymentId: cancelledPaymentId, checkOnly: checkout === 'success' } : null;
     if (!reference) return;
     let active = true;
     setPaymentRef(reference);
@@ -135,7 +135,7 @@ export function AICVPage() {
   function applyPaymentStatus(result: CheckoutResult) {
     setStatus((current) => ({ ...current, credits: result.credits, payments: result.payments }));
     setPayment(paymentFeedback(result));
-    setPaymentRef(result.state === 'paid' || result.state === 'closed' ? null : { paymentId: result.paymentId });
+    setPaymentRef(result.state === 'paid' || result.state === 'closed' ? null : { paymentId: result.paymentId, checkOnly: result.state === 'processing' });
   }
 
   async function checkPayment(reference: PaymentReference) {
@@ -220,7 +220,7 @@ export function AICVPage() {
       <div className="premium-body-top"><div><div className="eyebrow">YOUR WORKSPACE</div><h2>Build your next CV</h2></div><Link to="/my-cvs" className="button button-secondary"><FolderOpen size={16}/> My CVs</Link></div>
       {(error || notice || busy) && <div className="premium-feedback" aria-live="polite">{error && <InlineNotice tone="error">{error}</InlineNotice>}{notice && <InlineNotice tone="info">{notice}</InlineNotice>}{busy && <p className="premium-working"><span className="route-spinner" aria-hidden="true" />{busy}</p>}</div>}
       <div className="premium-grid">
-        <form className="premium-panel premium-form" onSubmit={(e) => void generateCv(e)}>
+        <form id="ai-cv-form" className="premium-panel premium-form" onSubmit={(e) => void generateCv(e)}>
           <div className="premium-step"><span>01</span><div><h3>Choose how to start</h3><p>Pick the option that fits where you are today.</p></div></div>
           <div className="premium-modes" role="group" aria-label="CV workflow">{modes.map(({ id, name, description, icon: Icon }) => <button type="button" aria-pressed={draft.mode === id} disabled={!!busy} key={id} onClick={() => update('mode', id)}><Icon size={19}/><strong>{name}</strong><small>{description}</small></button>)}</div>
           <div className="premium-step premium-step-next"><span>02</span><div><h3>{draft.mode === 'create' ? 'Tell us about yourself' : 'Add your career evidence'}</h3><p>AI can rewrite what you provide, but it should never make up experience.</p></div></div>
@@ -231,29 +231,31 @@ export function AICVPage() {
             {draft.mode === 'match' && <TextAreaField label="Job description" required minLength={20} maxLength={10000} rows={6} value={draft.job} onChange={(e) => update('job', e.target.value)} placeholder="Paste the role, responsibilities, and requirements here." />}
           </fieldset>
           <p className="premium-privacy"><LockKeyhole size={15}/> Career text and job descriptions are sent to the AI provider only when you generate or revise. Remove sensitive details first. <Link to="/privacy#ai">Privacy</Link></p>
-          {pending ? <div className="premium-actions"><Button type="button" disabled={!!busy} onClick={() => void recover()}>Check for my result <ArrowRight size={16}/></Button><Button type="button" variant="ghost" disabled={!!busy} onClick={() => { setPending(null); tabWrite(pendingKey, null); }}>Dismiss recovery</Button></div> : status.enabled && status.credits > 0 ? <Button type="submit" disabled={!!busy}><Sparkles size={16}/> Generate CV · 1 credit</Button> : <Button type="button" disabled={loading || !!busy} onClick={() => walletRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}>{status.enabled ? 'Unlock AI generation' : 'View premium availability'} <ArrowDown size={16}/></Button>}
+          {pending ? <div className="premium-actions"><Button type="button" disabled={!!busy} onClick={() => void recover()}>Check for my result <ArrowRight size={16}/></Button><Button type="button" variant="ghost" disabled={!!busy} onClick={() => { setPending(null); tabWrite(pendingKey, null); }}>Dismiss recovery</Button></div> : status.enabled && status.credits > 0 ? <Button type="submit" disabled={!!busy}><Sparkles size={16}/> Generate my CV</Button> : <Button type="button" disabled={loading || !!busy} onClick={() => walletRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })}>{status.enabled ? 'Unlock AI generation' : 'View premium availability'} <ArrowDown size={16}/></Button>}
         </form>
         <aside className="premium-aside" ref={walletRef} aria-label="Premium credits and payment">
           <div className="premium-panel premium-wallet">
             <div className="premium-wallet-head"><span className="premium-tile-icon"><CreditCard size={20}/></span><span className="premium-pill">PREMIUM</span></div>
-            <h3>One CV. One payment.</h3>
-            <p>One AI generation credit, with no subscription.</p>
-            <div className="premium-wallet-balance" aria-live="polite"><span>Available credits</span><strong>{loading ? '—' : status.credits}</strong></div>
+            <h3>{status.enabled ? 'One CV. One payment.' : 'AI CVs are coming soon'}</h3>
             {status.enabled ? <>
-              {!payment?.resume && status.prices.length > 1 && <SelectField label="Checkout currency" value={price.currency} disabled={!!paymentBusy} onChange={(e) => { setCurrency(e.target.value); tabWrite(currencyKey, e.target.value); }}>{status.prices.map((entry) => <option key={entry.currency} value={entry.currency}>{entry.currency} — {formatPrice(entry)}</option>)}</SelectField>}
-              <div className="premium-order-total"><div><strong>Checkout total</strong><small>1 AI CV credit</small></div><div><strong>{formatPrice(total)}</strong><small>{total.currency}</small></div></div>
+              <p>Pay once for one AI CV. No subscription.</p>
+              {status.testMode && <p className="premium-unavailable"><strong>Test checkout:</strong> No real payments. Credits are for testing only.</p>}
               {(paymentBusy || payment) && <div className="premium-payment-feedback" role="status">{paymentBusy ? <p className="premium-working"><span className="route-spinner" aria-hidden="true" />{paymentBusy}</p> : payment && <InlineNotice tone={payment.tone}>{payment.message}</InlineNotice>}</div>}
-              {payment?.resume ? <>
-                <Button type="button" disabled={!!paymentBusy || !!busy} onClick={() => { if (payment.resume) openCheckout(payment.resume.url, payment.resume.price.currency); }}><LockKeyhole size={15}/> Resume Stripe checkout <ArrowRight size={16}/></Button>
-                <Button type="button" variant="ghost" disabled={!!paymentBusy || !!busy} onClick={() => setPayment(null)}>Back to checkout options</Button>
-              </> : !payment?.processing && <Button type="button" disabled={!!paymentBusy || !!busy} onClick={() => void buy()}><LockKeyhole size={15}/> Continue to Stripe <ArrowRight size={16}/></Button>}
-              <small className="premium-checkout-note">Stripe shows the payment methods available for your location and device.</small>
+              {status.credits > 0 && !payment?.resume ? <>
+                <div className="premium-wallet-balance" aria-live="polite"><span>{status.credits} {status.credits === 1 ? 'AI CV ready' : 'AI CVs ready'} to generate</span><Check size={18}/></div>
+                {!pending && <Button type="submit" form="ai-cv-form" disabled={!!busy || !!paymentBusy}><Sparkles size={16}/> Generate my CV</Button>}
+              </> : <>
+                {!payment?.resume && status.prices.length > 1 && <SelectField label="Payment currency" value={price.currency} disabled={!!paymentBusy} onChange={(e) => { setCurrency(e.target.value); tabWrite(currencyKey, e.target.value); }}>{status.prices.map((entry) => <option key={entry.currency} value={entry.currency}>{entry.currency} — {formatPrice(entry)}</option>)}</SelectField>}
+                <div className="premium-order-total"><div><strong>1 AI CV</strong><small>One-time payment</small></div><div><strong>{formatPrice(total)}</strong><small>{total.currency}</small></div></div>
+                {payment?.resume ? <Button type="button" disabled={!!paymentBusy || !!busy} onClick={() => { if (payment.resume) openCheckout(payment.resume.url, payment.resume.price.currency); }}><LockKeyhole size={15}/> Resume payment</Button>
+                  : !payment?.processing && <Button type="button" disabled={!!paymentBusy || !!busy} onClick={() => void buy()}><LockKeyhole size={15}/> Pay {formatPrice(price)}</Button>}
+                <small className="premium-checkout-note">{status.provider === 'safepay' ? 'Choose Raast, Easypaisa, or an eligible Pakistani bank card where available at secure checkout.' : 'Choose an available payment method on the secure payment page.'}</small>
+              </>}
               {checkReference && <Button type="button" variant={payment?.processing ? 'primary' : 'secondary'} disabled={!!paymentBusy || !!busy} onClick={() => void checkPayment(checkReference)}>Check payment status</Button>}
-            </> : <><div className="premium-price">{formatPrice(price)} <small>{price.currency} / CV</small></div><p className="premium-unavailable">{loading ? 'Checking availability…' : loadError || 'Checkout isn’t enabled on this site yet. Explore the sample below or build a CV for free.'}</p></>}
+            </> : <><p className="premium-unavailable">{loading ? 'Checking availability…' : loadError || 'Payments aren’t available yet. You can still explore the sample or create a CV for free.'}</p>{!loading && <Link className="button button-secondary" to="/builder?new=1">Create CV for free <ArrowRight size={15}/></Link>}</>}
             {loadError && <Button type="button" variant="ghost" disabled={loading} onClick={() => void reloadStatus()}>Retry loading checkout</Button>}
-            {status.enabled && <Button type="button" variant="ghost" disabled={loading || !!paymentBusy || !!busy} onClick={() => void reloadStatus()}>Refresh balance</Button>}
-            <button className="premium-history-toggle" type="button" aria-expanded={showHistory} onClick={() => setShowHistory(!showHistory)}>Payment history <ArrowDown size={15}/></button>
-            {showHistory && <div className="premium-history">{status.payments.length ? status.payments.map((entry) => <article key={entry.id}><div className="premium-payment-row"><span>{new Date(entry.created_at).toLocaleDateString()}<small>{paymentLabels[entry.state]}</small></span><strong>{formatPrice(entry)} {entry.currency}</strong></div>{entry.state === 'pending' && <Button type="button" variant="secondary" disabled={!!paymentBusy || !!busy} onClick={() => { walletRef.current?.scrollIntoView({ block: 'start' }); void checkPayment({ paymentId: entry.id }); }}>Check or resume payment</Button>}</article>) : <p>No payments on this browser yet.</p>}{status.wallet && <small className="premium-wallet-ref">Wallet reference: {status.wallet}</small>}</div>}
+            {status.enabled && <><button className="premium-history-toggle" type="button" aria-expanded={showHistory} onClick={() => setShowHistory(!showHistory)}>Payment history <ArrowDown size={15}/></button>
+            {showHistory && <div className="premium-history">{status.payments.length ? status.payments.map((entry) => <article key={entry.id}><div className="premium-payment-row"><span>{new Date(entry.created_at).toLocaleDateString()}<small>{paymentLabels[entry.state]}</small></span><strong>{formatPrice(entry)} {entry.currency}</strong></div>{entry.state === 'pending' && <Button type="button" variant="secondary" disabled={!!paymentBusy || !!busy} onClick={() => { walletRef.current?.scrollIntoView({ block: 'start' }); void checkPayment({ paymentId: entry.id }); }}>Check or resume payment</Button>}</article>) : <p>No payments on this browser yet.</p>}{status.wallet && <small className="premium-wallet-ref">Wallet reference: {status.wallet}</small>}</div>}</>}
           </div>
           <div className="premium-panel premium-included"><h3><Layers3 size={18}/> Included with your CV</h3><ul>{[`Up to ${status.revisions} AI text revisions`, 'Unlimited manual editing', 'All 10 PathCV templates', 'Repeat PDF downloads', 'Credit back if generation fails'].map((item) => <li key={item}><Check size={15}/>{item}</li>)}</ul><Button type="button" variant="secondary" disabled={!!busy} onClick={demo}>Explore a sample CV <ArrowRight size={15}/></Button><p>CVs and credits stay tied to this browser. Back up your saved CVs before clearing site data.</p></div>
         </aside>

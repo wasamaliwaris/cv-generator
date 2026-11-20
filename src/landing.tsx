@@ -80,14 +80,13 @@ const homeJsonLd = {
 };
 
 function CVChoices() {
-  const [price, setPrice] = useState('Approx. $1');
-  const [currency, setCurrency] = useState('USD');
+  const [price, setPrice] = useState('');
   useEffect(() => {
     let mounted = true;
     premiumRequest<Pick<PremiumStatus, 'enabled' | 'prices'>>('prices').then((status) => {
       if (!mounted || !status.enabled) return;
       const current = suggestedCurrency(status.prices);
-      setPrice(formatPrice(current)); setCurrency(current.currency);
+      setPrice(formatPrice(current));
     }).catch(() => {});
     return () => { mounted = false; };
   }, []);
@@ -95,7 +94,7 @@ function CVChoices() {
     <div className="cv-choice-head"><div className="eyebrow">TWO WAYS TO BUILD</div><h2 id="cv-choice-title">Create Your CV with PathCV</h2><p>Write it yourself or get a head start with AI. You stay in control of the final CV.</p></div>
     <div className="cv-choice-grid">
       <article className="cv-choice-card"><div className="cv-choice-top"><span className="premium-tile-icon"><PenLine size={21}/></span><span className="premium-pill cv-free-pill">FREE</span></div><h3>Manual CV</h3><p>Create your CV manually using all ten PathCV templates.</p><div className="cv-choice-price">Free <small>· No signup</small></div><Link to="/builder?new=1" className="button button-secondary">Start manual CV <ArrowRight size={16}/></Link></article>
-      <article className="cv-choice-card cv-choice-ai"><div className="cv-choice-top"><span className="premium-tile-icon"><Sparkles size={21}/></span><span className="premium-pill">PREMIUM</span></div><h3>AI CV Generator</h3><p>Generate, improve, or tailor your CV to a job using AI.</p><div className="cv-choice-price">{price} <small>{currency} / CV</small></div><Link to="/ai-cv" className="button button-primary">Explore AI Generator <ArrowRight size={16}/></Link></article>
+      <article className="cv-choice-card cv-choice-ai"><div className="cv-choice-top"><span className="premium-tile-icon"><Sparkles size={21}/></span><span className="premium-pill">PREMIUM</span></div><h3>AI CV Generator</h3><p>Generate, improve, or tailor your CV to a job using AI.</p><div className="cv-choice-price">{price ? <>{price} <small>/ CV</small></> : <small>Preview the AI workspace</small>}</div><Link to="/ai-cv" className="button button-primary">Explore AI Generator <ArrowRight size={16}/></Link></article>
     </div>
   </section>;
 }

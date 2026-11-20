@@ -4,8 +4,8 @@ export type Balance = { credits: number; payments: Payment[] };
 export type CheckoutResult = Balance & { paymentId: string } & (
   { state: 'open'; url: string; price: Price } | { state: 'paid' | 'closed' | 'processing' | 'not_started' }
 );
-export type PremiumStatus = Balance & { enabled: boolean; prices: Price[]; wallet?: string; revisions: number };
-export const defaultStatus: PremiumStatus = { enabled: false, credits: 0, prices: [{ currency: 'USD', amount: 100 }], payments: [], revisions: 8 };
+export type PremiumStatus = Balance & { enabled: boolean; prices: Price[]; wallet?: string; revisions: number; provider?: 'safepay' | 'stripe'; testMode?: boolean };
+export const defaultStatus: PremiumStatus = { enabled: false, credits: 0, prices: [{ currency: 'PKR', amount: 28000 }], payments: [], revisions: 8 };
 
 export async function premiumRequest<T>(action: string, body?: object, id?: string): Promise<T> {
   const params = new URLSearchParams({ action });
@@ -18,6 +18,7 @@ export async function premiumRequest<T>(action: string, body?: object, id?: stri
 }
 
 export function formatPrice({ currency, amount }: Price) {
+  if (currency === 'PKR') return `Rs ${new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(amount / 100)}`;
   return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(amount / 100);
 }
 export function suggestedCurrency(prices: Price[]) {
