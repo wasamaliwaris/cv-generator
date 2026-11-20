@@ -1,6 +1,9 @@
 export type Price = { currency: string; amount: number };
 export type Payment = Price & { id: string; state: 'paid' | 'pending' | 'expired' | 'refunded'; created_at: string };
 export type Balance = { credits: number; payments: Payment[] };
+export type CheckoutResult = Balance & { paymentId: string } & (
+  { state: 'open'; url: string; price: Price } | { state: 'paid' | 'closed' | 'processing' | 'not_started' }
+);
 export type PremiumStatus = Balance & { enabled: boolean; prices: Price[]; wallet?: string; revisions: number };
 export const defaultStatus: PremiumStatus = { enabled: false, credits: 0, prices: [{ currency: 'USD', amount: 100 }], payments: [], revisions: 8 };
 

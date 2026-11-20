@@ -14,6 +14,10 @@
 .cv-choice-card p { color: var(--muted); margin: 0 0 14px; }
 .cv-choice-price { color: var(--ink); font-size: 19px; font-weight: 800; margin: auto 0 14px; }
 .cv-choice-price small { font-size: 13px; font-weight: 550; color: var(--muted); }
+/* Main homepage actions */
+.hero-actions .hero-ai-button { gap: 7px; }
+.hero-ai-button > svg { flex-shrink: 0; color: var(--teal); }
+.hero-template-link { display: inline-flex; align-items: center; gap: 6px; margin-top: 13px; font-weight: 700; font-size: 13px; }
 /* AI workspace */
 .premium-hero { background: radial-gradient(ellipse at 76% 8%, #1f6156, transparent 53%), linear-gradient(120deg, #081d30, #113f40); color: #fff; overflow: hidden; }
 .premium-hero-inner { display: grid; grid-template-columns: minmax(0, 1fr) 300px; align-items: center; gap: 30px; padding-block: 34px 49px; }
@@ -71,8 +75,16 @@
 .premium-wallet .premium-unavailable { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 10px; font-size: 13px; }
 .premium-history-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-top: 13px; padding-top: 11px; border: 0; border-top: 1px solid var(--line); background: none; text-align: start; cursor: pointer; font-weight: 700; font-size: 13px; }
 .premium-history { font-size: 13px; }
-.premium-history > div { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--line); }
-.premium-history > div small { display: block; color: var(--muted); text-transform: capitalize; }
+.premium-aside { scroll-margin-top: 88px; }
+.premium-order-total, .premium-payment-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.premium-order-total { margin-top: 12px; padding-block: 10px; border-block: 1px solid var(--line); }
+.premium-order-total > div:last-child { text-align: end; }
+.premium-order-total > div:last-child strong { font-size: 21px; line-height: 1.1; }
+.premium-order-total small, .premium-payment-row small { display: block; font-size: 12px; color: var(--muted); }
+.premium-payment-feedback { margin-top: 10px; }
+.premium-payment-feedback .inline-notice { overflow-wrap: anywhere; }
+.premium-history > article { padding-block: 8px; border-bottom: 1px solid var(--line); }
+.premium-history > article .button { margin-top: 6px; font-size: 12px; padding: 5px 9px; }
 .premium-wallet-ref { display: block; color: var(--muted); overflow-wrap: anywhere; margin-top: 6px; }
 .premium-included h3, .premium-editor h3 { display: flex; align-items: center; gap: 8px; }
 .premium-included ul { display: grid; gap: 8px; padding: 0; margin: 15px 0; list-style: none; font-size: 13px; }

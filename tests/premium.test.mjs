@@ -43,13 +43,19 @@ test('wallet verifies payment, rejects forged and duplicate events, reserves one
   } };
   const env = { DATABASE_URL: 'test', STRIPE_SECRET_KEY: 'sk_test_no_network', STRIPE_WEBHOOK_SECRET: 'stripe-test-webhook-secret', OPENAI_API_KEY: 'test', PREMIUM_SESSION_SECRET: 'session-secret-only-used-for-the-tests', PREMIUM_APP_URL: 'https://pathcv.example', PREMIUM_CURRENCIES: 'PKR,EUR,INVALID' };
   const sdk = new Stripe(env.STRIPE_SECRET_KEY);
-  let session, empty = true, calls = 0;
+  let session, empty = true, calls = 0, sessionsCreated = 0, failOpenOnce = false;
+  const providerRequests = new Map();
   const stripe = { webhooks: sdk.webhooks, checkout: { sessions: {
-    create: async (req) => {
-      session = { id: 'cs_test_pathcv', url: 'https://checkout.stripe.com/test', mode: req.mode, metadata: req.metadata, amount_total: req.line_items[0].price_data.unit_amount, currency: req.line_items[0].price_data.currency, payment_status: 'unpaid' };
+    create: async (req, { idempotencyKey }) => {
+      assert.equal(req.payment_method_types, undefined);
+      assert.deepEqual(req.adaptive_pricing, { enabled: false });
+      if (providerRequests.has(idempotencyKey)) return providerRequests.get(idempotencyKey);
+      session = { id: `cs_test_pathcv_${++sessionsCreated}`, url: 'https://checkout.stripe.com/test', status: 'open', mode: req.mode, metadata: req.metadata, amount_total: req.line_items[0].price_data.unit_amount, currency: req.line_items[0].price_data.currency, payment_status: 'unpaid' };
+      providerRequests.set(idempotencyKey, session);
+      if (failOpenOnce) { failOpenOnce = false; throw new Error('Transport closed after Stripe created the session'); }
       return session;
     },
-    retrieve: async () => session,
+    retrieve: async (id) => [...providerRequests.values()].find((entry) => entry.id === id),
   } } };
   const url = await serve(t, premiumHandler(env, { pool, stripe, generate: async ({ mode }) => { calls++; return { result: empty ? null : mode === 'revise' ? { replacement: 'Revised wording.' } : example }; } }));
   const request = async (action, { cookie, body, origin = env.PREMIUM_APP_URL, id } = {}) => {
@@ -70,8 +76,21 @@ test('wallet verifies payment, rejects forged and duplicate events, reserves one
   assert.equal((await request('checkout', { cookie, body: { currency: 'PKR' }, origin: 'https://other.example' })).status, 403);
   assert.equal((await request('checkout', { cookie: `${cookie}0`, body: { currency: 'PKR' } })).status, 403);
   assert.equal((await request('checkout', { cookie, body: { currency: 'ZZZ' } })).status, 400);
-  assert.equal((await request('checkout', { cookie, body: { currency: 'PKR', amount: 1 } })).status, 200);
+  assert.equal((await request('checkout', { cookie, body: { currency: 'PKR', quotedAmount: 1 } })).status, 409);
+  const pkr = { currency: 'PKR', quotedAmount: 28000 };
+  failOpenOnce = true;
+  assert.equal((await request('checkout', { cookie, body: pkr })).status, 503);
+  const opened = (await request('checkout', { cookie, body: pkr })).data;
+  assert.equal(opened.state, 'open');
+  assert.deepEqual(opened.price, { currency: 'PKR', amount: 28000 });
   assert.equal(session.amount_total, 28000);
+  assert.equal((await request('checkout', { cookie, body: pkr })).data.paymentId, opened.paymentId);
+  assert.equal(sessionsCreated, 1);
+  assert.equal((await request('confirm', { cookie: other, body: { paymentId: opened.paymentId } })).status, 404);
+  assert.equal((await request('confirm', { cookie, body: { paymentId: opened.paymentId } })).data.url, session.url);
+  session.status = 'complete';
+  assert.equal((await request('checkout', { cookie, body: pkr })).data.state, 'processing');
+  assert.equal(sessionsCreated, 1);
   const confirm = { sessionId: session.id };
   assert.equal((await request('confirm', { cookie: other, body: confirm })).status, 404);
   assert.equal((await request('confirm', { cookie, body: confirm })).data.paid, false);
@@ -100,6 +119,17 @@ test('wallet verifies payment, rejects forged and duplicate events, reserves one
   assert.equal(await event({ type: 'charge.refunded', object: { refunded: true, payment_intent: 'pi_pathcv' } }), 200);
   assert.equal(await event(), 200);
   assert.equal((await request('status', { cookie })).data.payments[0].state, 'refunded');
+  const delayed = (await request('checkout', { cookie, body: { currency: 'USD', quotedAmount: 100 } })).data;
+  session.status = 'complete';
+  assert.equal(await event(), 200);
+  assert.equal((await request('confirm', { cookie, body: { paymentId: delayed.paymentId } })).data.state, 'processing');
+  assert.equal(await event({ type: 'checkout.session.async_payment_failed' }), 200);
+  assert.equal((await request('confirm', { cookie, body: { paymentId: delayed.paymentId } })).data.state, 'closed');
+  assert.equal((await request('status', { cookie })).data.credits, 0);
+  const retry = (await request('checkout', { cookie, body: { currency: 'USD', quotedAmount: 100 } })).data;
+  assert.notEqual(retry.paymentId, delayed.paymentId);
+  session.status = 'expired';
+  assert.equal((await request('confirm', { cookie, body: { paymentId: retry.paymentId } })).data.state, 'closed');
   // Simulate a process interruption after credit reservation: the next wallet read restores it.
   const staleJob = randomUUID(), promoCredit = randomUUID();
   await query("INSERT INTO premium_credits (id,wallet,state) VALUES ($1,$2,'reserved')", [promoCredit, status.wallet]);
