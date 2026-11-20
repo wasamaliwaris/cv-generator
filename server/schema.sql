@@ -8,10 +8,13 @@ CREATE TABLE IF NOT EXISTS premium_payments (
   id uuid PRIMARY KEY,
   wallet uuid NOT NULL REFERENCES premium_wallets(id),
   session_id text UNIQUE, intent_id text UNIQUE,
+  provider text NOT NULL DEFAULT 'stripe' CHECK (provider IN ('stripe','safepay')),
   amount integer NOT NULL, currency text NOT NULL,
   state text NOT NULL DEFAULT 'pending' CHECK (state IN ('pending','paid','expired','refunded')),
   created_at timestamptz NOT NULL DEFAULT now()
 );
+-- Existing Stripe installations keep their payment rows and credits.
+ALTER TABLE premium_payments ADD COLUMN IF NOT EXISTS provider text NOT NULL DEFAULT 'stripe' CHECK (provider IN ('stripe','safepay'));
 CREATE TABLE IF NOT EXISTS premium_credits (
   id uuid PRIMARY KEY,
   wallet uuid NOT NULL REFERENCES premium_wallets(id),

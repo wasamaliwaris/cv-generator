@@ -2,6 +2,7 @@ import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto';
 import Stripe from 'stripe';
 import { z } from 'zod';
 import { database, store, checkoutMatches, PremiumError, REVISION_LIMIT } from '../server/premium-store.mjs';
+import { safepayClient } from '../server/safepay.mjs';
 import { generate, generationInput, revisionInput } from '../server/premium-ai.mjs';
 
 const cookieName = 'pathcv_premium';
@@ -11,14 +12,22 @@ const safeEqual = (a, b) => a?.length === b.length && timingSafeEqual(Buffer.fro
 const sameOrigin = (req, appUrl) => req.headers.origin === appUrl;
 const currencies = { USD: 1, PKR: 280, EUR: 0.95, GBP: 0.85, CAD: 1.45, AUD: 1.55 };
 const minimums = { USD: 100, PKR: 28000, EUR: 95, GBP: 85, CAD: 145, AUD: 155 };
-const disabled = { enabled: false, prices: [{ currency: 'USD', amount: 100 }], revisions: REVISION_LIMIT };
+const disabled = { enabled: false, prices: [{ currency: 'PKR', amount: 28000 }], revisions: REVISION_LIMIT };
 function configuration(env) {
   const { DATABASE_URL, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, OPENAI_API_KEY, PREMIUM_SESSION_SECRET, PREMIUM_APP_URL } = env;
-  if (!DATABASE_URL || !STRIPE_SECRET_KEY || !STRIPE_WEBHOOK_SECRET || !OPENAI_API_KEY || (PREMIUM_SESSION_SECRET?.length ?? 0) < 32) return null;
+  const stripeReady = Boolean(STRIPE_SECRET_KEY && STRIPE_WEBHOOK_SECRET);
+  const safepayEnvironment = env.SAFEPAY_ENVIRONMENT || 'sandbox';
+  const pkr = (env.SAFEPAY_PRICE_PKR || '280').trim();
+  const safepayReady = Boolean(env.SAFEPAY_PUBLIC_KEY && env.SAFEPAY_SECRET_KEY && env.SAFEPAY_WEBHOOK_SECRET
+    && ['sandbox', 'production'].includes(safepayEnvironment) && /^\d{1,5}$/.test(pkr) && Number(pkr) > 0);
+  const provider = env.PREMIUM_PAYMENT_PROVIDER || (safepayReady ? 'safepay' : 'stripe');
+  const providerReady = provider === 'safepay' ? safepayReady : provider === 'stripe' && stripeReady;
+  if (!DATABASE_URL || !OPENAI_API_KEY || (PREMIUM_SESSION_SECRET?.length ?? 0) < 32 || !providerReady) return null;
+  if (provider === 'safepay' && env.VERCEL_ENV === 'production' && safepayEnvironment !== 'production') return null;
   try {
     const app = new URL(PREMIUM_APP_URL);
     if (app.protocol !== 'https:' && !(app.protocol === 'http:' && ['localhost', '127.0.0.1'].includes(app.hostname))) return null;
-    return { appUrl: app.origin, list: [...new Set(['USD', ...(env.PREMIUM_CURRENCIES || '').toUpperCase().split(',').map((c) => c.trim()).filter((c) => Object.hasOwn(currencies, c))])] };
+    return { provider, stripeReady, safepayReady, safepayEnvironment, pkrAmount: Number(pkr) * 100, appUrl: app.origin, list: [...new Set(['USD', ...(env.PREMIUM_CURRENCIES || '').toUpperCase().split(',').map((c) => c.trim()).filter((c) => Object.hasOwn(currencies, c))])] };
   } catch { return null; }
 }
 async function raw(req) {
@@ -36,7 +45,8 @@ async function raw(req) {
 export function premiumHandler(env = process.env, dependencies = {}) {
   const config = configuration(env);
   const ledger = config ? store(dependencies.pool ?? database(env.DATABASE_URL)) : null;
-  const stripe = config ? dependencies.stripe ?? new Stripe(env.STRIPE_SECRET_KEY, { timeout: 12000, maxNetworkRetries: 1 }) : null;
+  const stripe = config?.stripeReady ? dependencies.stripe ?? new Stripe(env.STRIPE_SECRET_KEY, { timeout: 12000, maxNetworkRetries: 1 }) : null;
+  const safepay = config?.safepayReady ? safepayClient(env, dependencies.safepayFetch) : null;
   const writer = dependencies.generate ?? generate;
   const walletId = (req, res) => {
     const entry = req.headers.cookie?.split(';').map((c) => c.trim()).find((c) => c.startsWith(`${cookieName}=`));
@@ -49,13 +59,23 @@ export function premiumHandler(env = process.env, dependencies = {}) {
     return id;
   };
   const priceList = async () => {
+    if (config.provider === 'safepay') return [{ currency: 'PKR', amount: config.pkrAmount }];
     const { rows: [settings] } = await ledger.q('SELECT usd_cents FROM premium_settings WHERE id=true');
     return config.list.map((currency) => ({ currency, amount: Math.max(minimums[currency], Math.ceil(settings.usd_cents * currencies[currency])) }));
   };
-  async function paymentStatus(payment, session) {
+  const publicStatus = async () => ({ enabled: true, prices: await priceList(), revisions: REVISION_LIMIT, provider: config.provider, testMode: config.provider === 'safepay' ? config.safepayEnvironment === 'sandbox' : env.STRIPE_SECRET_KEY.startsWith('sk_test_') });
+  async function paymentStatus(payment, session, allowResume = true) {
     if (payment.state === 'paid') return { state: 'paid' };
     if (payment.state !== 'pending') return { state: 'closed' };
     if (!session && !payment.session_id) return { state: 'not_started' };
+    if (payment.provider === 'safepay') {
+      if (!safepay) throw new PremiumError(503, 'Safepay status is unavailable right now.');
+      const state = await safepay.lookup(payment);
+      if (['paid', 'closed', 'refunded'].includes(state)) return { state: await ledger.recordSafepayStatus(payment, state) };
+      if (state === 'open' && allowResume) return { state: 'open', url: await safepay.checkoutUrl(payment, config.appUrl), price: { amount: payment.amount, currency: payment.currency } };
+      return { state: 'processing' };
+    }
+    if (!stripe) throw new PremiumError(503, 'This older payment cannot be checked here. Contact support if you were charged.');
     session ??= await stripe.checkout.sessions.retrieve(payment.session_id);
     if (!checkoutMatches(session, payment)) throw new PremiumError(503, 'We could not verify the checkout details. Do not pay again until payment status is confirmed.');
     if (session.payment_status === 'paid' || session.status === 'expired') {
@@ -76,9 +96,15 @@ export function premiumHandler(env = process.env, dependencies = {}) {
     try {
       const params = new URL(req.url, 'http://localhost').searchParams;
       const action = params.get('action') || 'status';
-      if (req.method === 'GET' && action === 'prices') return json(200, config ? { enabled: true, prices: await priceList(), revisions: REVISION_LIMIT } : disabled);
+      if (req.method === 'GET' && action === 'prices') return json(200, config ? await publicStatus() : disabled);
       if (!config) return json(action === 'status' && req.method === 'GET' ? 200 : 503, { ...disabled, credits: 0, payments: [], error: 'Premium is not configured on this deployment.' });
+      if (req.method === 'POST' && action === 'safepay-webhook') {
+        if (!safepay) throw new PremiumError(503, 'Safepay is not configured.');
+        await safepay.reconcile(safepay.readEvent(await raw(req), req.headers['x-sfpy-signature']), ledger);
+        return json(200, { received: true });
+      }
       if (req.method === 'POST' && action === 'webhook') {
+        if (!stripe) throw new PremiumError(503, 'Stripe is not configured.');
         const payload = await raw(req);
         let event;
         try { event = stripe.webhooks.constructEvent(payload, req.headers['stripe-signature'], env.STRIPE_WEBHOOK_SECRET); }
@@ -87,7 +113,7 @@ export function premiumHandler(env = process.env, dependencies = {}) {
           await ledger.recordPayment(event.data.object, event.type === 'checkout.session.async_payment_failed');
         }
         if (event.type === 'charge.refunded' && event.data.object.refunded && typeof event.data.object.payment_intent === 'string') {
-          const { rows: [payment] } = await ledger.q('SELECT id,wallet FROM premium_payments WHERE intent_id=$1', [event.data.object.payment_intent]);
+          const { rows: [payment] } = await ledger.q('SELECT id,wallet FROM premium_payments WHERE intent_id=$1 AND provider=$2', [event.data.object.payment_intent, 'stripe']);
           if (payment) await ledger.tx(payment.wallet, async (q) => {
             await q("UPDATE premium_payments SET state='refunded' WHERE id=$1", [payment.id]);
             await q("UPDATE premium_credits SET state='revoked' WHERE payment=$1", [payment.id]);
@@ -99,7 +125,7 @@ export function premiumHandler(env = process.env, dependencies = {}) {
       if (req.method === 'POST' && (!sameOrigin(req, config.appUrl) || !/^application\/json\b/i.test(req.headers['content-type'] ?? ''))) throw new PremiumError(403, 'Request is not from the PathCV workspace.');
       const wallet = walletId(req, res);
       if (req.method === 'GET' && action === 'status') {
-        return json(200, { enabled: true, prices: await priceList(), revisions: REVISION_LIMIT, wallet, ...await ledger.summary(wallet) });
+        return json(200, { ...await publicStatus(), wallet, ...await ledger.summary(wallet) });
       }
       if (req.method === 'GET' && action === 'job') {
         const id = uuid.safeParse(params.get('id'));
@@ -115,7 +141,12 @@ export function premiumHandler(env = process.env, dependencies = {}) {
         const price = (await priceList()).find(({ currency }) => currency === body?.currency);
         if (!price) throw new PremiumError(400, 'This currency is not supported.');
         if (body.quotedAmount !== undefined && body.quotedAmount !== price.amount) throw new PremiumError(409, 'The price changed. Review the updated total before continuing.');
-        const payment = await ledger.reserveCheckout(wallet, price);
+        let payment = await ledger.reserveCheckout(wallet, price, config.provider);
+        if (payment.provider === 'safepay') {
+          if (!payment.session_id) payment = await ledger.attachSafepayTracker(payment, (order) => safepay.createTracker(order));
+          const result = await paymentStatus(payment);
+          return json(200, { ...result, paymentId: payment.id, ...await ledger.summary(wallet) });
+        }
         let result;
         if (payment.session_id) {
           result = await paymentStatus(payment);
@@ -144,7 +175,7 @@ export function premiumHandler(env = process.env, dependencies = {}) {
         if (!byPayment.success && !sessionId) throw new PremiumError(400, 'Invalid checkout reference.');
         const owned = await ledger.findPayment(wallet, { paymentId: byPayment.success ? byPayment.data : null, sessionId });
         if (!owned) throw new PremiumError(404, 'Open the workspace in the browser you used to pay.');
-        const result = await paymentStatus(owned);
+        const result = await paymentStatus(owned, undefined, body.checkOnly !== true);
         return json(200, { ...result, paymentId: owned.id, paid: result.state === 'paid', ...await ledger.summary(wallet) });
       }
       if (action === 'generate') {

@@ -23,7 +23,7 @@ try {
     case 'price': await q('UPDATE premium_settings SET usd_cents=$1 WHERE id=true', [integer(arg, 100, 10000)]); break;
     case 'wallets': console.table((await q(`SELECT w.id,w.created_at, count(c.id) FILTER (WHERE c.state='available') AS available,
       count(c.id) FILTER (WHERE c.state='used') AS used FROM premium_wallets w LEFT JOIN premium_credits c ON c.wallet=w.id GROUP BY w.id ORDER BY w.created_at DESC LIMIT 100`)).rows); break;
-    case 'payments': console.table((await q(`SELECT id,wallet,currency,amount,state,created_at FROM premium_payments ORDER BY created_at DESC LIMIT 100`)).rows); break;
+    case 'payments': console.table((await q(`SELECT id,wallet,provider,session_id,currency,amount,state,created_at FROM premium_payments ORDER BY created_at DESC LIMIT 100`)).rows); break;
     case 'generations': console.table((await q(`SELECT id,wallet,parent,mode,state,model,input_tokens,output_tokens,cost_usd,created_at FROM premium_jobs ORDER BY created_at DESC LIMIT 100`)).rows); break;
     case 'expenses': console.table((await q(`SELECT model,count(*) AS jobs,sum(input_tokens) AS input_tokens,sum(output_tokens) AS output_tokens,
       sum(cost_usd) AS estimated_usd,count(*) FILTER (WHERE cost_usd IS NULL) AS jobs_without_cost FROM premium_jobs GROUP BY model`)).rows); break;
@@ -42,10 +42,11 @@ try {
     }
     case 'refund': {
       const paymentId = id(arg);
+      const { rows: [record] } = await q('SELECT wallet,provider FROM premium_payments WHERE id=$1', [paymentId]);
+      if (!record) throw new Error('Payment not found.');
+      if (record.provider === 'safepay') throw new Error('Issue Safepay refunds in the Safepay dashboard. Keep the refund webhook active.');
       if (!process.env.STRIPE_SECRET_KEY) throw new Error('Set STRIPE_SECRET_KEY.');
       const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, { timeout: 12000, maxNetworkRetries: 1 });
-      const { rows: [record] } = await q('SELECT wallet FROM premium_payments WHERE id=$1', [paymentId]);
-      if (!record) throw new Error('Payment not found.');
       await tx(record.wallet, async (query) => {
         const { rows: [payment] } = await query('SELECT p.state, p.intent_id, c.state AS credit_state FROM premium_payments p JOIN premium_credits c ON c.payment=p.id WHERE p.id=$1', [paymentId]);
         if (payment?.state === 'refunded') return;

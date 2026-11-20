@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
-import { randomUUID } from 'node:crypto';
+import { createHmac, randomUUID } from 'node:crypto';
 import { once } from 'node:events';
 import { test } from 'node:test';
 import { PGlite } from '@electric-sql/pglite';
@@ -24,7 +24,7 @@ test('unconfigured deployment allows browse-only, not payments or AI', async (t)
   assert.equal((await fetch(`${url}?action=checkout`, { method: 'POST' })).status, 503);
 });
 
-test('wallet verifies payment, rejects forged and duplicate events, reserves one credit, restores it on failures, and permits revisions', async (t) => {
+async function embeddedDb(t) {
   const db = new PGlite();
   await db.exec(await readFile(new URL('../server/schema.sql', import.meta.url), 'utf8'));
   t.after(() => db.close());
@@ -41,6 +41,11 @@ test('wallet verifies payment, rejects forged and duplicate events, reserves one
     await previous;
     return { query, release };
   } };
+  return { pool, query };
+}
+
+test('wallet verifies payment, rejects forged and duplicate events, reserves one credit, restores it on failures, and permits revisions', async (t) => {
+  const { pool, query } = await embeddedDb(t);
   const env = { DATABASE_URL: 'test', STRIPE_SECRET_KEY: 'sk_test_no_network', STRIPE_WEBHOOK_SECRET: 'stripe-test-webhook-secret', OPENAI_API_KEY: 'test', PREMIUM_SESSION_SECRET: 'session-secret-only-used-for-the-tests', PREMIUM_APP_URL: 'https://pathcv.example', PREMIUM_CURRENCIES: 'PKR,EUR,INVALID' };
   const sdk = new Stripe(env.STRIPE_SECRET_KEY);
   let session, empty = true, calls = 0, sessionsCreated = 0, failOpenOnce = false;
@@ -137,6 +142,93 @@ test('wallet verifies payment, rejects forged and duplicate events, reserves one
   assert.equal((await request('status', { cookie })).data.credits, 1);
   assert.equal((await request('job', { cookie, id: staleJob })).data.state, 'failed');
   assert.equal((await request('status', { cookie })).data.credits, 1);
+});
+
+test('Safepay checkout prices in PKR and credits the wallet once after verified settlement', async (t) => {
+  const { pool, query } = await embeddedDb(t);
+  await query("INSERT INTO premium_wallets (id) VALUES ($1)", [randomUUID()]);
+  const env = {
+    DATABASE_URL: 'test', OPENAI_API_KEY: 'test', PREMIUM_SESSION_SECRET: 'session-secret-only-used-for-the-tests',
+    PREMIUM_APP_URL: 'https://pathcv.example', PREMIUM_PAYMENT_PROVIDER: 'safepay',
+    SAFEPAY_ENVIRONMENT: 'sandbox', SAFEPAY_PUBLIC_KEY: 'test_public', SAFEPAY_SECRET_KEY: 'test_secret', SAFEPAY_WEBHOOK_SECRET: 'test_endpoint_secret',
+  };
+  const trackerToken = `track_${randomUUID()}`;
+  let tracker, createCalls = 0, lookupCalls = 0, failPassport = false;
+  const safepayFetch = async (url, options) => {
+    assert.equal(new URL(url).origin, 'https://sandbox.api.getsafepay.com');
+    assert.equal(options.headers['X-SFPY-MERCHANT-SECRET'], env.SAFEPAY_SECRET_KEY);
+    if (url.endsWith('/order/payments/v3/')) {
+      createCalls++;
+      const req = JSON.parse(options.body);
+      assert.equal(req.merchant_api_key, env.SAFEPAY_PUBLIC_KEY);
+      assert.equal(req.currency, 'PKR');
+      assert.equal(req.amount, 28000);
+      assert.equal(req.include_fees, false);
+      tracker = { token: trackerToken, environment: 'sandbox', mode: 'payment', state: 'TRACKER_STARTED', purchase_totals: { quote_amount: { currency: req.currency, amount: req.amount } }, metadata: { order_id: { value: req.metadata.order_id } } };
+      return Response.json({ data: { tracker, capabilities: { CYBERSOURCE: true, RAAST: true } } });
+    }
+    if (url.endsWith('/client/passport/v1/token')) return failPassport ? new Response(null, { status: 503 }) : Response.json({ data: 'short-lived-checkout-token' });
+    assert.equal(new URL(url).pathname, `/reporter/api/v1/payments/${trackerToken}`);
+    lookupCalls++;
+    return Response.json({ data: { tracker } });
+  };
+  const root = await serve(t, premiumHandler(env, { pool, safepayFetch }));
+  const getStatus = async (cookie) => {
+    const response = await fetch(`${root}?action=status`, cookie ? { headers: { Cookie: cookie } } : undefined);
+    return { cookie: response.headers.get('set-cookie')?.split(';')[0], data: await response.json() };
+  };
+  const { cookie, data: initial } = await getStatus();
+  const other = (await getStatus()).cookie;
+  const post = async (action, body, browser = cookie) => {
+    const result = await fetch(`${root}?action=${action}`, { method: 'POST', headers: { Cookie: browser, 'Content-Type': 'application/json', Origin: env.PREMIUM_APP_URL }, body: JSON.stringify(body) });
+    return { status: result.status, data: await result.json() };
+  };
+  const webhook = async (type, changes = {}, valid = true) => {
+    const body = JSON.stringify({ type, version: '2.0.0', data: { tracker: trackerToken, state: tracker.state, amount: 28000, currency: 'PKR', ...changes } });
+    const signature = valid ? createHmac('sha512', env.SAFEPAY_WEBHOOK_SECRET).update(body).digest('hex') : '0'.repeat(128);
+    return (await fetch(`${root}?action=safepay-webhook`, { method: 'POST', headers: { 'X-SFPY-SIGNATURE': signature }, body })).status;
+  };
+  assert.equal(initial.provider, 'safepay');
+  assert.equal(initial.testMode, true);
+  assert.deepEqual(initial.prices, [{ currency: 'PKR', amount: 28000 }]);
+  assert.equal((await post('checkout', { currency: 'USD' })).status, 400);
+  assert.equal((await post('checkout', { currency: 'PKR', quotedAmount: 1 })).status, 409);
+  failPassport = true;
+  const price = { currency: 'PKR', quotedAmount: 28000 };
+  assert.equal((await post('checkout', price)).status, 503);
+  failPassport = false;
+  const opened = (await post('checkout', price)).data;
+  assert.equal(opened.state, 'open');
+  const checkoutUrl = new URL(opened.url);
+  assert.equal(checkoutUrl.origin, 'https://sandbox.api.getsafepay.com');
+  assert.equal(checkoutUrl.pathname, '/embedded/');
+  assert.equal(checkoutUrl.searchParams.get('tracker'), trackerToken);
+  assert.equal(checkoutUrl.searchParams.get('redirect_url'), `${env.PREMIUM_APP_URL}/ai-cv?checkout=success&payment_id=${opened.paymentId}`);
+  assert.ok(!opened.url.includes(env.SAFEPAY_SECRET_KEY));
+  assert.equal(createCalls, 1, 'reuse the tracker after failing to open checkout');
+  const reference = { paymentId: opened.paymentId, checkOnly: true };
+  assert.equal((await post('confirm', reference, other)).status, 404);
+  assert.equal((await post('confirm', reference)).data.state, 'processing');
+  assert.equal((await getStatus(cookie)).data.credits, 0);
+  const beforeWebhook = lookupCalls;
+  assert.equal(await webhook('payment.succeeded', {}, false), 400);
+  assert.equal(await webhook('payment.succeeded', { amount: 1 }), 503);
+  assert.equal(lookupCalls, beforeWebhook);
+  assert.equal(await webhook('payment.succeeded'), 503, 'ask the provider to retry if the status is not yet final');
+  tracker.state = 'TRACKER_ENDED';
+  tracker.purchase_totals.quote_amount.amount = 1;
+  assert.equal((await post('confirm', reference)).status, 503);
+  tracker.purchase_totals.quote_amount.amount = 28000;
+  assert.equal(await webhook('payment.succeeded'), 200);
+  assert.equal((await post('confirm', reference)).data.credits, 1);
+  assert.equal(await webhook('payment.succeeded'), 200);
+  assert.equal((await getStatus(cookie)).data.credits, 1);
+  tracker.state = 'TRACKER_REFUNDED';
+  assert.equal(await webhook('payment.refunded'), 200);
+  assert.equal(await webhook('payment.succeeded'), 200);
+  const refunded = (await getStatus(cookie)).data;
+  assert.equal(refunded.credits, 0);
+  assert.equal(refunded.payments[0].state, 'refunded');
 });
 
 test('model output guard drops unsupported matching evidence and unsupported numeric claims', async () => {
