@@ -47,6 +47,14 @@ PathCV can use Safepay for one-time PKR payments. The buyer chooses an available
 4. In **Safepay → Developers → Endpoints**, register `https://YOUR_ORIGIN/api/premium?action=safepay-webhook` and subscribe to the 2.0.0 `payment.succeeded`, `payment.refunded`, and `void.succeeded` events. Copy the endpoint’s shared secret to `SAFEPAY_WEBHOOK_SECRET`. The app verifies the signature and checks the tracker with Safepay before updating a credit.
 5. Redeploy and verify cancel, success, payment status in the browser, and duplicate webhook deliveries in sandbox. Before offering local methods to visitors, confirm approvals, eligible channels, settlement terms, minimum amounts and fees, and make a controlled live test of each approved method. Switch both the keys and endpoint secret to live, then set `SAFEPAY_ENVIRONMENT=production`. Refund Safepay payments in its dashboard; full refunds reconcile through the webhook.
 
+#### Test Safepay Sandbox on the website
+
+1. In **Vercel → Settings → Environment Variables**, add the sandbox settings to **Preview**, not Production. Prefer restricting them to the branch you are testing. Set `SAFEPAY_ENVIRONMENT=sandbox`, use the Safepay **test dashboard** keys and webhook secret, and use a dedicated test database and session secret. A local `.env` file doesn't configure a deployed Preview. On Vercel Sandbox Preview, you can leave `PREMIUM_APP_URL` unset to use the Vercel branch/deployment URLs if Vercel system environment variables are exposed. For a preview custom domain, set that exact origin explicitly. Keep Deployment Protection turned on to avoid public test payments or AI usage.
+2. Run `npm run premium:admin -- migrate` with the **test** `DATABASE_URL`. Never reuse the production URL. Run `npm run premium:admin -- check` with the same environment loaded to list missing settings and verify schema access. The app reads `SAFEPAY_PUBLIC_KEY`, not `NEXT_PUBLIC_SAFEPAY_PUBLIC_KEY`. The OpenAI key must be from an API project with billing and access to `OPENAI_MODEL` (defaults to `gpt-4o-mini`); a ChatGPT subscription does not cover API usage. In Vercel, redeploy the Preview after changing variables.
+3. In the Safepay **test dashboard**, use the preview hostname for the webhook endpoint. If Deployment Protection blocks incoming webhooks, use Vercel’s [Protection Bypass for Automation](https://vercel.com/docs/deployment-protection/methods-to-bypass-deployment-protection/protection-bypass-automation) for the webhook sender only (for example, a secret `x-vercel-protection-bypass` query parameter on the webhook URL). Keep the bypass token private. The return page can still check the payment directly with Safepay even if a webhook is delayed.
+4. Optionally run `npm run premium:admin -- check --providers` in a trusted terminal with the same Sandbox settings loaded. This creates an **unpaid** test tracker, requests a checkout token, and checks that OpenAI can generate a valid CV from synthetic notes (one billable AI request). It does not save a CV or payment to your database, charge money, or verify webhook delivery. It reports each provider separately without displaying keys or tokens.
+5. Open `/ai-cv` using the Preview URL and look for **Test checkout** and **Pay Rs 280** (or your configured price). Use a [Safepay test payment method](https://safepay-docs.netlify.app/developers/safepay/test-cards/); never enter a real card during the sandbox test. Return in the same browser. PathCV checks the stored tracker and should give exactly one test credit. Enter career notes and select **Generate my CV**. Refresh and confirm you cannot reuse the same payment for a second credit.
+
 ### Stripe checkout (existing installations)
 
 To enable Stripe checkout and generation, set `PREMIUM_PAYMENT_PROVIDER=stripe` and use the Stripe variables in `.env.example`:
@@ -65,6 +73,8 @@ From a trusted environment with database access (and the Stripe key for refunds)
 
 | Command after `npm run premium:admin --` | Purpose |
 | --- | --- |
+| `check` | Diagnose missing environment settings and schema access without printing secrets |
+| `check --providers` | Also verify Safepay Sandbox checkout setup and generate an OpenAI test draft |
 | `price 100` | Set the Stripe USD base price in cents. Safepay uses `SAFEPAY_PRICE_PKR`. |
 | `wallets` / `payments` / `generations` | Review wallets, transactions, or generation metadata |
 | `expenses` | Review token counts and estimated model costs when pricing rates are configured |

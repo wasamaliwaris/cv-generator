@@ -2,12 +2,56 @@ import { readFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import Stripe from 'stripe';
 import { z } from 'zod';
+import { checkPremiumConfig } from '../server/premium-config.mjs';
+import { checkSandboxProviders, isSafepaySandbox } from '../server/premium-preflight.mjs';
 import { database, store } from '../server/premium-store.mjs';
 
 const [action, arg, value] = process.argv.slice(2);
 if (!action || action === 'help') {
-  console.log('Premium admin: migrate | price USD_CENTS | wallets | payments | generations | expenses | grant WALLET COUNT | revoke WALLET COUNT | refund PAYMENT_ID | purge-results');
+  console.log('Premium admin: check | migrate | price USD_CENTS | wallets | payments | generations | expenses | grant WALLET COUNT | revoke WALLET COUNT | refund PAYMENT_ID | purge-results');
   process.exit(0);
+}
+if (action === 'check') {
+  if (value !== undefined || (arg !== undefined && arg !== '--providers')) {
+    console.error('Use check or check --providers.');
+    process.exit(1);
+  }
+  const { config, issues } = checkPremiumConfig(process.env);
+  if (!config) {
+    for (const issue of issues) console.error(`• ${issue}`);
+    process.exit(1);
+  }
+  if (arg === '--providers' && !isSafepaySandbox(process.env, config)) {
+    console.error('Provider checks require Safepay Sandbox outside Vercel Production.');
+    process.exit(1);
+  }
+  const connection = database(process.env.DATABASE_URL);
+  try {
+    // Read only: catch missing tables or pre-Safepay database migrations without printing data.
+    await connection.query('SELECT provider FROM premium_payments LIMIT 0');
+    await connection.query('SELECT id FROM premium_wallets LIMIT 0');
+    await connection.query('SELECT id FROM premium_credits LIMIT 0');
+    await connection.query('SELECT id FROM premium_jobs LIMIT 0');
+    await connection.query('SELECT usd_cents FROM premium_settings LIMIT 0');
+    console.log('Premium settings and database schema are ready.');
+  } catch (error) {
+    console.error(['42P01', '42703'].includes(error.code)
+      ? 'Premium database schema is missing or outdated. Run npm run premium:admin -- migrate.'
+      : 'Could not access the premium database. Check DATABASE_URL and database permissions.');
+    process.exitCode = 1;
+  } finally { await connection.end(); }
+  if (!process.exitCode && arg === '--providers') {
+    const { safepay, openai } = await checkSandboxProviders(process.env, config);
+    console[safepay ? 'log' : 'error'](safepay
+      ? 'Safepay Sandbox: created an unpaid tracker and checkout session. No money was moved.'
+      : 'Safepay Sandbox: could not start checkout. Check the sandbox key pair, PKR amount, and merchant permissions.');
+    console[openai ? 'log' : 'error'](openai
+      ? 'OpenAI: generated a valid CV draft from synthetic notes.'
+      : 'OpenAI: could not generate a valid draft. Check the API key, API billing, and model access.');
+    if (!safepay || !openai) process.exitCode = 1;
+    else console.log('Next: complete a Sandbox payment in the preview browser and verify the credit and webhook.');
+  }
+  process.exit(process.exitCode ?? 0);
 }
 if (!process.env.DATABASE_URL) throw new Error('Set DATABASE_URL in the environment.');
 const pool = database(process.env.DATABASE_URL);

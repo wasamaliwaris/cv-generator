@@ -36,7 +36,9 @@ export function safepayClient(env, fetcher = fetch) {
         merchant_api_key: env.SAFEPAY_PUBLIC_KEY, intent: 'CYBERSOURCE', mode: 'payment', entry_mode: 'raw',
         currency: payment.currency, amount: payment.amount, metadata: { order_id: payment.id }, include_fees: false,
       });
-      return checkedTracker(data?.tracker, payment).token;
+      const tracker = checkedTracker(data?.tracker, payment);
+      if (tracker.state !== 'TRACKER_STARTED') throw invalid();
+      return tracker.token;
     },
     async checkoutUrl(payment, appUrl) {
       const passport = await api('/client/passport/v1/token', {});

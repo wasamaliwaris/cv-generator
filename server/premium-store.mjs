@@ -61,11 +61,11 @@ export function store(pool) {
     async attachSafepayTracker(payment, createTracker) {
       return tx(payment.wallet, async (query) => {
         const { rows: [current] } = await query("SELECT * FROM premium_payments WHERE id=$1 AND provider='safepay'", [payment.id]);
-        if (current.session_id || current.state !== 'pending') return current;
+        if (current.session_id || current.state !== 'pending') return { payment: current, created: false };
         // Store one tracker before issuing a hosted checkout URL. Concurrent requests reuse it.
         const tracker = await createTracker(current);
         await query('UPDATE premium_payments SET session_id=$2 WHERE id=$1', [current.id, tracker]);
-        return { ...current, session_id: tracker };
+        return { payment: { ...current, session_id: tracker }, created: true };
       });
     },
     async recordSafepayStatus(payment, state) {

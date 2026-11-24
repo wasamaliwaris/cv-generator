@@ -122,14 +122,27 @@ export function AICVPage() {
     }
     const reference = checkout === 'success' && checkoutId ? { sessionId: checkoutId } : (checkout === 'success' || checkout === 'cancelled') && cancelledPaymentId ? { paymentId: cancelledPaymentId, checkOnly: checkout === 'success' } : null;
     if (!reference) return;
-    let active = true;
+    const controller = new AbortController();
+    let attempts = 0;
+    let timer: number | undefined;
     setPaymentRef(reference);
     setPaymentBusy('Confirming your payment…');
-    premiumRequest<CheckoutResult>('confirm', reference)
-      .then((result) => { if (active) applyPaymentStatus(result); })
-      .catch((e: Error) => { if (active) setPayment({ tone: 'error', message: e.message }); })
-      .finally(() => { if (active) setPaymentBusy(''); });
-    return () => { active = false; };
+    const checkReturn = async () => {
+      try {
+        const result = await premiumRequest<CheckoutResult>('confirm', reference, undefined, controller.signal);
+        if (controller.signal.aborted) return;
+        if (checkout === 'success' && result.state === 'processing' && ++attempts < 4) {
+          timer = window.setTimeout(() => void checkReturn(), 2500);
+          return;
+        }
+        applyPaymentStatus(result);
+      } catch (e) {
+        if (!controller.signal.aborted) setPayment({ tone: 'error', message: (e as Error).message });
+      }
+      if (!controller.signal.aborted) setPaymentBusy('');
+    };
+    void checkReturn();
+    return () => { controller.abort(); window.clearTimeout(timer); };
   }, [enabled, checkout, checkoutId, cancelledPaymentId]);
 
   function applyPaymentStatus(result: CheckoutResult) {
