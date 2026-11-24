@@ -9,6 +9,7 @@ import Stripe from 'stripe';
 import { premiumHandler } from '../api/premium.mjs';
 import { generate } from '../server/premium-ai.mjs';
 import { checkPremiumConfig } from '../server/premium-config.mjs';
+import { checkSandboxProviders } from '../server/premium-preflight.mjs';
 
 const example = { profile: { summary: 'Designer using Figma.', workExperience: [], education: [], skills: [{ name: 'Figma', category: 'Technical' }], languages: [], optionalSections: [] }, matching: [], missing: [], keywords: [], suggestions: [] };
 
@@ -255,4 +256,40 @@ test('model output guard drops unsupported matching evidence and unsupported num
   assert.equal(result.profile.summary, 'Designer using Figma.');
   assert.equal(usage.cost, 0.0002);
   assert.equal((await generate(input, {}, response({ bad: true }))).result, null);
+});
+
+test('Sandbox preflight checks checkout and synthetic CV generation separately without charging', async () => {
+  const env = { VERCEL_ENV: 'preview', SAFEPAY_ENVIRONMENT: 'sandbox', SAFEPAY_PUBLIC_KEY: 'test-key', OPENAI_API_KEY: 'test-ai' };
+  const config = { provider: 'safepay', safepayEnvironment: 'sandbox', pkrAmount: 28000, appUrl: 'https://pathcv.example' };
+  const calls = [];
+  let aiBlocked = false;
+  const fetcher = async (url, { method, body }) => {
+    calls.push(`${method} ${url}`);
+    const req = JSON.parse(body);
+    if (url === 'https://api.openai.com/v1/chat/completions') {
+      const input = JSON.parse(req.messages[1].content);
+      assert.match(input.evidence, /Example Studio/);
+      return aiBlocked ? new Response(null, { status: 401 }) : Response.json({ choices: [{ finish_reason: 'stop', message: { content: JSON.stringify(example) } }] });
+    }
+    if (url === 'https://sandbox.api.getsafepay.com/order/payments/v3/') {
+      assert.equal(req.merchant_api_key, env.SAFEPAY_PUBLIC_KEY);
+      assert.equal(req.amount, 28000);
+      assert.equal(req.currency, 'PKR');
+      return Response.json({ data: { tracker: { token: `track_${randomUUID()}`, state: 'TRACKER_STARTED', environment: 'sandbox', mode: 'payment', purchase_totals: { quote_amount: { currency: req.currency, amount: req.amount } } } } });
+    }
+    if (url === 'https://sandbox.api.getsafepay.com/client/passport/v1/token') return Response.json({ data: 'sandbox-passport' });
+    throw new Error('Unexpected provider request');
+  };
+  assert.deepEqual(await checkSandboxProviders(env, config, fetcher), { safepay: true, openai: true });
+  assert.deepEqual(calls, [
+    'POST https://sandbox.api.getsafepay.com/order/payments/v3/',
+    'POST https://api.openai.com/v1/chat/completions',
+    'POST https://sandbox.api.getsafepay.com/client/passport/v1/token',
+  ]);
+  aiBlocked = true;
+  assert.deepEqual(await checkSandboxProviders(env, config, fetcher), { safepay: true, openai: false });
+  calls.length = 0;
+  await assert.rejects(checkSandboxProviders({ ...env, VERCEL_ENV: 'production' }, config, fetcher), /require Safepay Sandbox/);
+  await assert.rejects(checkSandboxProviders({ ...env, SAFEPAY_ENVIRONMENT: 'production' }, config, fetcher), /require Safepay Sandbox/);
+  assert.deepEqual(calls, []);
 });
