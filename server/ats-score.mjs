@@ -242,6 +242,6 @@ export function analyzeCV({ text, format = { kind: 'Text' }, job = '', title = '
     categories, sections, strengths: strengths.slice(0, premium ? 10 : 4),
     weaknesses: weaknesses.slice(0, premium ? 22 : 4), recommendations: recommendations.slice(0, premium ? 22 : 3),
     keyword: jobMode ? { coverage, total: keywords.length, ...(premium ? { terms: keywords } : {}) } : null,
-    format: format.kind, layoutLimits: format.kind === 'PDF' ? 'PDF checks use selectable text and spacing; graphics, text boxes and complex tables may not be detectable.' : format.kind === 'Text' ? 'Plain-text checks do not measure the layout of an exported document.' : 'Word layout checks detect common structures, not every possible formatting issue.',
+    format: format.kind, layoutLimits: format.kind === 'PDF' ? 'PDF checks use selectable text and spacing; graphics, text boxes and complex tables may not be detectable.' : ['Text', 'TXT', 'Markdown', 'DOC'].includes(format.kind) ? 'This check uses extracted or submitted text and does not measure the original document layout.' : 'Layout checks use detectable document structure and do not reproduce the original visual layout.',
   };
 }

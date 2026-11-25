@@ -7,7 +7,7 @@ import { analyzeCV, classify } from '../server/ats-score.mjs';
 import { parseDocument, FILE_LIMIT, DIRECT_LIMIT } from '../server/ats-document.mjs';
 import { FIRST_PART, tempUploads } from '../server/ats-staging.mjs';
 import { makeGrant, signToken, time } from '../server/ats-access.mjs';
-import { cv, jd, docx, pdf } from './ats-fixtures.mjs';
+import { cv, jd, docx, legacyDoc, odt, pdf } from './ats-fixtures.mjs';
 const secret = 'secret for testing only with enough length';
 
 async function harness(t, env = {}, fetcher = fetch) {
@@ -164,4 +164,38 @@ test('rate limits attempts even without optional Redis', async t => {
   const call = await harness(t);
   for (let n = 0; n < 8; n++) assert.equal((await call('redeem', { code: 'bad' })).status, 403);
   assert.equal((await call('redeem', { code: 'bad' })).status, 429);
+});
+
+
+test('directly scores legacy Word, ODT, RTF, TXT, Markdown and HTML uploads', async t => {
+  const call = await harness(t);
+  const html = `<html><head><title>hidden title</title></head><body><script>invisible JavaScript</script><p hidden>ignored hidden text</p>${cv.split('\n').map(line => `<p>${line}</p>`).join('')}</body></html>`;
+  const rtf = String.raw`{\rtf1\ansi{\fonttbl{\f0 hiddenFont;}}` + cv.replaceAll('\n', String.raw`\par `).replace('—', String.raw`\emdash `) + String.raw`{\*\unsupported ignored destination}}`;
+  for (const [file, extension, format] of [
+    [legacyDoc(), 'doc', 'DOC'], [odt(), 'odt', 'ODT'], [Buffer.from(rtf), 'rtf', 'RTF'],
+    [Buffer.concat([Buffer.from([0xff, 0xfe]), Buffer.from(cv, 'utf16le')]), 'txt', 'TXT'],
+    [Buffer.from(cv.replace('Summary', '## Summary').replace('Skills', '**Skills**')), 'md', 'Markdown'], [Buffer.from(html), 'html', 'HTML'],
+  ]) {
+    const parsed = await parseDocument(file, extension);
+    assert.equal(parsed.format.kind, format); assert.match(parsed.text, /Amira Malik/);
+    assert.doesNotMatch(parsed.text, /hidden title|invisible JavaScript|ignored hidden text|hiddenFont|ignored destination/);
+    const analyzed = await call('analyze', packet(file, { extension, job: jd }));
+    assert.equal(analyzed.status, 200, format);
+    assert.equal(analyzed.body.result.format, format);
+    assert.ok(analyzed.body.result.score > 0);
+    assert.ok(analyzed.body.result.sections.some(section => section.name === 'Summary' && section.status === 'good'));
+  }
+});
+
+test('rejects renamed binary, broken RTF, non-text ODF, and empty HTML; reports OCR suggestion for no selectable text', async t => {
+  await assert.rejects(parseDocument(Buffer.from([0, 255, 32, 128, 44]), 'txt'), { status: 422 });
+  await assert.rejects(parseDocument(Buffer.from(String.raw`{\rtf1\ansi Unclosed document`), 'rtf'), { status: 422 });
+  await assert.rejects(parseDocument(odt(cv, 'application/vnd.oasis.opendocument.spreadsheet'), 'odt'), { status: 422 });
+  await assert.rejects(parseDocument(Buffer.from('<html><script>lots of invisible words that must not be scored</script></html>'), 'html'), { status: 422 });
+  const call = await harness(t);
+  const result = await call('analyze', packet(pdf(''), { extension: 'pdf' }));
+  assert.equal(result.status, 422);
+  assert.equal(result.body.code, 'unreadable_text');
+  const pasted = await call('analyze', { text: cv, job: jd });
+  assert.equal(pasted.status, 200); assert.equal(pasted.body.result.format, 'Text');
 });

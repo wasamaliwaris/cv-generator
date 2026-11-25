@@ -1,4 +1,4 @@
-import { AtsError, cleanText, documentKind, DIRECT_LIMIT, FILE_LIMIT, parseDocument, validateText } from '../server/ats-document.mjs';
+import { AtsError, cleanText, documentKind, DIRECT_LIMIT, FILE_LIMIT, parseDocument, SUPPORTED_ERROR, validateText } from '../server/ats-document.mjs';
 import { analyzeCV } from '../server/ats-score.mjs';
 import { rateGuard, redeem, redisClient, requestKey, session } from '../server/ats-access.mjs';
 import { FIRST_PART, tempUploads } from '../server/ats-staging.mjs';
@@ -80,11 +80,11 @@ export function createAtsHandler(env = process.env, fetcher = fetch) {
       await limiter(`ip:${ip}`, 28, 600);
       const mime = req.headers['content-type']?.split(';')[0];
       if (action === 'stage') {
-        if (!staging) throw new AtsError(503, 'Large uploads are not available here. Use a PDF or DOCX under 4 MB.');
+        if (!staging) throw new AtsError(503, 'Large uploads are not available here. Use a CV file under 4 MB.');
         if (mime !== 'application/octet-stream') throw new AtsError(415, 'Invalid upload type.');
         await limiter(`stage:${ip}`, 5, 600);
         const part = await readBody(req, FIRST_PART);
-        if (!documentKind(part)) throw new AtsError(415, 'Only valid PDF and Word (.docx) files are accepted.');
+        if (!documentKind(part)) throw new AtsError(415, SUPPORTED_ERROR);
         return send(200, { ticket: await staging.stage(part) });
       }
       if (action === 'redeem') {
@@ -105,10 +105,10 @@ export function createAtsHandler(env = process.env, fetcher = fetch) {
         const input = jobInput(info);
         let bytes = packet.subarray(4 + length);
         if (info.ticket !== undefined) {
-          if (!staging || bytes.length < 1 || bytes.length > FILE_LIMIT - FIRST_PART) throw new AtsError(413, 'Choose a PDF or DOCX no larger than 5 MB.');
+          if (!staging || bytes.length < 1 || bytes.length > FILE_LIMIT - FIRST_PART) throw new AtsError(413, 'Choose a CV file no larger than 5 MB.');
           bytes = Buffer.concat([await staging.take(info.ticket), bytes]);
         } else if (bytes.length > DIRECT_LIMIT) throw new AtsError(413, 'Use the large upload option or select a file under 4 MB.');
-        const parsed = await parseDocument(bytes);
+        const parsed = await parseDocument(bytes, info.extension);
         return send(200, { result: analyzeCV({ ...parsed, ...input, premium: access }), ...(access ? { text: parsed.text } : {}) });
       }
       if (mime !== 'application/json') throw new AtsError(415, 'Invalid request type.');
@@ -125,7 +125,7 @@ export function createAtsHandler(env = process.env, fetcher = fetch) {
     } catch (error) {
       if (error instanceof AtsError) {
         if (error.status === 429) res.setHeader('Retry-After', '600');
-        return send(error.status, { error: error.message });
+        return send(error.status, { error: error.message, ...(error.code ? { code: error.code } : {}) });
       }
       return send(503, { error: 'The checker could not complete this request. Please try again shortly.' });
     } finally { if (acquired) active--; }
