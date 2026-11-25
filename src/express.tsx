@@ -92,7 +92,7 @@ export function ExpressPage() {
   const patchEdu = (id: string, patch: Partial<QuickEdu>) =>
     setEdu((rows) => rows.map((row) => (row.id === id ? { ...row, ...patch } : row)));
 
-  const create = () => {
+  const create = (checkAts = false) => {
     setError('');
     if (!firstName.trim() && !lastName.trim()) {
       setError('Add at least your first or last name to create your CV.');
@@ -137,7 +137,7 @@ export function ExpressPage() {
     const name = [firstName.trim(), lastName.trim()].filter(Boolean).join(' ');
     const doc = newDocument(profile, 'modern', name ? `${name}'s CV` : 'My Express CV');
     setData((current) => ({ ...current, documents: [doc, ...current.documents] }));
-    navigate(`/builder?id=${encodeURIComponent(doc.id)}&step=7`);
+    navigate(checkAts ? `/ats-checker?cv=${encodeURIComponent(doc.id)}` : `/builder?id=${encodeURIComponent(doc.id)}&step=7`);
   };
 
   return (
@@ -262,8 +262,9 @@ export function ExpressPage() {
       <div className="express-footer">
         <Link to="/builder?new=1" className="button button-ghost"><ArrowLeft size={16} /> All options</Link>
         <span className="express-footer-count">{essentials.done} of {essentials.total} essentials ready</span>
-        <Button type="button" onClick={create}>Create my CV <ArrowRight size={16} /></Button>
+        <Button type="button" onClick={() => create()}>Create my CV <ArrowRight size={16} /></Button>
       </div>
+      <p className="express-next"><button type="button" className="text-link" onClick={() => create(true)}>Save CV and check ATS score <ArrowRight size={14} /></button></p>
       <p className="express-next">Next: pick a design, preview your CV, and download the PDF — everything stays editable.</p>
     </main>
   );
