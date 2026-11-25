@@ -1,12 +1,11 @@
 import { Suspense, lazy, useEffect } from 'react';
-import { BrowserRouter, Link, Route, Routes, useLocation } from 'react-router-dom';
+import { BrowserRouter, Link, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AppProvider } from './app-context';
 import { ThemeProvider } from './theme';
 import { ErrorBoundary } from './error-boundary';
 import { Footer, SiteHeader, SkipLink } from './ui';
 
 const LandingPage = lazy(() => import('./landing').then((m) => ({ default: m.LandingPage })));
-const AICVPage = lazy(() => import('./ai-cv').then((m) => ({ default: m.AICVPage })));
 const BuilderPage = lazy(() => import('./builder').then((m) => ({ default: m.BuilderPage })));
 const ExpressPage = lazy(() => import('./express').then((m) => ({ default: m.ExpressPage })));
 const CoverLetterPage = lazy(() => import('./cover-letter').then((m) => ({ default: m.CoverLetterPage })));
@@ -39,7 +38,7 @@ function AppShell() {
   const { pathname } = useLocation();
   return <div className="app-shell"><SkipLink /><SiteHeader /><ErrorBoundary key={pathname}><ScrollToTop /><Suspense fallback={<RouteLoading />}><Routes>
     <Route path="/" element={<LandingPage />} />
-    <Route path="/ai-cv" element={<AICVPage />} />
+    <Route path="/ai-cv" element={<Navigate to="/builder" replace />} />
     <Route path="/builder" element={<BuilderPage />} />
     <Route path="/express" element={<ExpressPage />} />
     <Route path="/templates" element={<TemplatesPage />} />

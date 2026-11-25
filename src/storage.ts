@@ -82,7 +82,6 @@ function normalizeDocument(value: unknown): CVDocument | null {
   const purpose = ['Job', 'Education', 'Volunteering', 'General'].includes(String(setupRaw.purpose)) ? setupRaw.purpose as BuilderSetup['purpose'] : 'General';
   return {
     id: value.id,
-    aiGenerationId: text(value.aiGenerationId) || undefined,
     name: text(value.name) || 'Untitled CV',
     setup: { purpose, targetRole: text(setupRaw.targetRole), targetCountry: text(setupRaw.targetCountry), documentLanguage: text(setupRaw.documentLanguage) || 'English' },
     templateId,
