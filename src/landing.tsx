@@ -7,8 +7,6 @@ import { useAppData } from './app-context';
 import { CountUp, Reveal } from './reveal';
 import { message } from './strings';
 import { SITE_URL } from './site';
-import { formatPrice, premiumRequest, suggestedCurrency, type PremiumStatus } from './premium-client';
-import './premium.css';
 import { JsonLd, usePageMeta } from './ui';
 import { MAX_OPEN_BYTES, OPEN_FILE_ACCEPT, fileKind, openCvDocument, readBackupFile } from './cv-file-import';
 
@@ -71,33 +69,13 @@ const homeJsonLd = {
     { '@type': 'WebSite', name: 'PathCV', url: SITE_URL },
     { '@type': 'Organization', name: 'PathCV', url: SITE_URL, logo: `${SITE_URL}/icon-512.png`, sameAs: ['https://www.facebook.com/m.wasam.2025', 'https://www.instagram.com/its_wasam_ali', 'https://www.linkedin.com/in/muhammadwasam'] },
     { '@type': 'FAQPage', mainEntity: [
-      { '@type': 'Question', name: 'Is PathCV really free?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Building, all ten templates, and the print-to-PDF flow are free. The manual builder and downloads stay free. Optional AI generation is paid.' } },
-      { '@type': 'Question', name: 'Do I need an account?', acceptedAnswer: { '@type': 'Answer', text: 'No account is needed. Manual CVs stay in this browser. The optional AI tools send only the text you submit for processing.' } },
+      { '@type': 'Question', name: 'Is PathCV really free?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Building, all ten templates, and the print-to-PDF flow are free. There is no paywall.' } },
+      { '@type': 'Question', name: 'Do I need an account?', acceptedAnswer: { '@type': 'Answer', text: 'No account is needed. Your information stays in this browser on this device.' } },
       { '@type': 'Question', name: 'Does PathCV translate my CV?', acceptedAnswer: { '@type': 'Answer', text: 'No. The interface is prepared for future localization, but your CV content is not automatically translated.' } },
       { '@type': 'Question', name: 'Will my CV pass every ATS?', acceptedAnswer: { '@type': 'Answer', text: 'No tool can guarantee that. The layouts are designed to be straightforward and readable, but outcomes vary.' } },
     ] },
   ],
 };
-
-function CVChoices() {
-  const [price, setPrice] = useState('');
-  useEffect(() => {
-    let mounted = true;
-    premiumRequest<Pick<PremiumStatus, 'enabled' | 'prices'>>('prices').then((status) => {
-      if (!mounted || !status.enabled) return;
-      const current = suggestedCurrency(status.prices);
-      setPrice(formatPrice(current));
-    }).catch(() => {});
-    return () => { mounted = false; };
-  }, []);
-  return <section className="cv-choice page-width" id="create-your-cv" aria-labelledby="cv-choice-title">
-    <div className="cv-choice-head"><div className="eyebrow">TWO WAYS TO BUILD</div><h2 id="cv-choice-title">Create Your CV with PathCV</h2><p>Write it yourself or get a head start with AI. You stay in control of the final CV.</p></div>
-    <div className="cv-choice-grid">
-      <article className="cv-choice-card"><div className="cv-choice-top"><span className="premium-tile-icon"><PenLine size={21}/></span><span className="premium-pill cv-free-pill">FREE</span></div><h3>Manual CV</h3><p>Create your CV manually using all ten PathCV templates.</p><div className="cv-choice-price">Free <small>· No signup</small></div><Link to="/builder?new=1" className="button button-secondary">Start manual CV <ArrowRight size={16}/></Link></article>
-      <article className="cv-choice-card cv-choice-ai"><div className="cv-choice-top"><span className="premium-tile-icon"><Sparkles size={21}/></span><span className="premium-pill">PREMIUM</span></div><h3>AI CV Generator</h3><p>Generate, improve, or tailor your CV to a job using AI.</p><div className="cv-choice-price">{price ? <>{price} <small>/ CV</small></> : <small>Preview the AI workspace</small>}</div><Link to="/ai-cv" className="button button-primary">Explore AI Generator <ArrowRight size={16}/></Link></article>
-    </div>
-  </section>;
-}
 
 export function LandingPage() {
   const { data, setData } = useAppData();
@@ -152,15 +130,11 @@ export function LandingPage() {
       <div className="hero-orb hero-orb-b" aria-hidden="true" />
       <div className="page-width hero-grid">
         <div className="hero-copy">
-          <div className="hero-badge"><span className="hero-badge-dot"><Sparkles size={12} /></span> Free manual builder · No signup needed</div>
+          <div className="hero-badge"><span className="hero-badge-dot"><Sparkles size={12} /></span> Free forever · No signup needed</div>
           <div className="hero-overline"><span className="overline-rule" />YOUR WORK, YOUR WAY</div>
           <h1>A CV that<br /><em>moves with you.</em></h1>
-          <p className="hero-subtitle">Build and download a professional CV for free, or get a head start with the premium AI generator.</p>
-          <div className="hero-actions">
-            <Link to="/builder?new=1" className="button button-primary button-large">Create CV for free <ArrowRight size={18} /></Link>
-            <Link to="/ai-cv" className="button button-outline button-large hero-ai-button"><Sparkles size={17} /> Create CV using AI <span className="premium-pill">Premium</span></Link>
-          </div>
-          <Link to="/templates" className="hero-template-link">Browse templates <ArrowRight size={14} /></Link>
+          <p className="hero-subtitle">Create, tailor, preview, and download a professional CV — completely free, right in your browser.</p>
+          <div className="hero-actions"><Link to="/builder?new=1" className="button button-primary button-large">Create my CV free <ArrowRight size={18} /></Link><Link to="/templates" className="button button-outline button-large">Browse templates</Link></div>
           <p className="hero-promise"><ShieldCheck size={15} />{message('promise')}</p>
           <button type="button" className="resume-card hero-open-cv" disabled={openingFile} onClick={() => openFileRef.current?.click()}>
             <span className="resume-icon"><FolderOpen size={16} /></span>
@@ -173,7 +147,7 @@ export function LandingPage() {
           <div className="hero-stats">
             <div className="hero-stat"><strong>10</strong><span>Original templates</span></div>
             <div className="hero-stat"><strong>A4</strong><span>Print-ready PDF</span></div>
-            <div className="hero-stat"><strong>100%</strong><span>Local manual builder</span></div>
+            <div className="hero-stat"><strong>100%</strong><span>Private &amp; local</span></div>
           </div>
         </div>
         <div className="hero-visual" aria-label="Illustration of a CV being edited and previewed">
@@ -197,8 +171,6 @@ export function LandingPage() {
       <div className="hero-wave" aria-hidden="true"><svg viewBox="0 0 1440 70" preserveAspectRatio="none"><path d="M0,40 C240,75 480,5 720,30 C960,55 1200,70 1440,35 L1440,70 L0,70 Z" /></svg></div>
     </section>
 
-    <CVChoices />
-
     <section className="trust-strip page-width" aria-label="PathCV promises">{trustDetails.map((item, i) => <Reveal key={item.title} delay={i * 90}><div className="trust-card"><span className="trust-icon">{item.icon}</span><span>{item.title}<small>{item.sub}</small></span></div></Reveal>)}</section>
 
     <section className="stats-band" aria-label="PathCV at a glance"><div className="page-width stats-grid">{stats.map((s) => <div className="stat-item" key={s.label}><strong><CountUp to={s.value} suffix={s.suffix} /></strong><span>{s.label}</span></div>)}</div></section>
@@ -217,7 +189,7 @@ export function LandingPage() {
 
     <section className="advice-section section-space"><div className="page-width advice-layout"><Reveal><div className="advice-intro"><div className="eyebrow">A FEW GOOD HABITS</div><h2>Make the reader’s next step easy.</h2><p>A CV cannot promise an outcome. Clear choices can help someone understand your experience.</p><Link to="/help" className="text-link">Read the practical FAQs <ArrowRight size={15} /></Link></div></Reveal><div className="advice-list">{advice.map(([title, body], index) => <Reveal key={title} delay={(index % 2) * 90}><article><span>{String(index + 1).padStart(2, '0')}</span><div><h3>{title}</h3><p>{body}</p></div></article></Reveal>)}</div></div></section>
 
-    <section className="faq-section section-space"><div className="page-width faq-layout"><Reveal><div><div className="eyebrow">GOOD TO KNOW</div><h2>Small answers,<br /><em>no fine print.</em></h2><Link to="/help" className="arrow-link">Visit Help <ArrowRight size={16} /></Link><Link to="/resources" className="arrow-link">Read in-depth guides <ArrowRight size={16} /></Link></div></Reveal><Reveal delay={120}><div className="faq-list"><details><summary>Is PathCV really free?</summary><p>Yes. Building, all ten templates, and the print-to-PDF flow are free. The manual builder and downloads stay free. Optional AI generation is paid.</p></details><details><summary>Do I need an account?</summary><p>No account is needed. Manual CVs stay in this browser. The optional AI tools send only the text you submit for processing.</p></details><details><summary>Does PathCV translate my CV?</summary><p>No. The interface is prepared for future localization, but your CV content is not automatically translated.</p></details><details><summary>Will my CV pass every ATS?</summary><p>No tool can guarantee that. The layouts are designed to be straightforward and readable, but outcomes vary. <Link to="/resources/tailor-cv-for-ats">Read our ATS guide</Link>.</p></details></div></Reveal></div></section>
+    <section className="faq-section section-space"><div className="page-width faq-layout"><Reveal><div><div className="eyebrow">GOOD TO KNOW</div><h2>Small answers,<br /><em>no fine print.</em></h2><Link to="/help" className="arrow-link">Visit Help <ArrowRight size={16} /></Link><Link to="/resources" className="arrow-link">Read in-depth guides <ArrowRight size={16} /></Link></div></Reveal><Reveal delay={120}><div className="faq-list"><details><summary>Is PathCV really free?</summary><p>Yes. Building, all ten templates, and the print-to-PDF flow are free. There is no paywall.</p></details><details><summary>Do I need an account?</summary><p>No account is needed. Your information stays in this browser on this device.</p></details><details><summary>Does PathCV translate my CV?</summary><p>No. The interface is prepared for future localization, but your CV content is not automatically translated.</p></details><details><summary>Will my CV pass every ATS?</summary><p>No tool can guarantee that. The layouts are designed to be straightforward and readable, but outcomes vary. <Link to="/resources/tailor-cv-for-ats">Read our ATS guide</Link>.</p></details></div></Reveal></div></section>
 
     <section className="last-cta-section"><div className="page-width"><Reveal><div className="last-cta">
       <div className="last-cta-copy"><div className="eyebrow">READY WHEN YOU ARE</div><h2>Your next role starts with a clear CV.</h2><p>Build it free, keep every version, and download a polished PDF — no signup, no watermark.</p></div>

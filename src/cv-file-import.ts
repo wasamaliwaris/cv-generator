@@ -176,7 +176,7 @@ export function draftFromText(rawText: string, fileName: string): DraftFromText 
 }
 
 /** Extracts readable text without uploading the file. */
-export async function readCvText(file: File): Promise<string> {
+async function readCvText(file: File): Promise<string> {
   const kind = fileKind(file);
   if (kind === 'unknown' || kind === 'backup') throw new Error('Choose a PDF, Word (.docx), or text file.');
   if (file.size > MAX_OPEN_BYTES) throw new Error('That file is larger than 20 MB. Choose a smaller file.');

@@ -131,7 +131,6 @@ export interface BuilderSetup {
 
 export interface CVDocument {
   id: string;
-  aiGenerationId?: string;
   name: string;
   setup: BuilderSetup;
   templateId: TemplateId;
