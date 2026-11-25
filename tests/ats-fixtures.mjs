@@ -34,3 +34,38 @@ export function pdf(text = cv) {
   data += `xref\n0 ${offsets.length}\n0000000000 65535 f \n` + offsets.slice(1).map(n => `${String(n).padStart(10, '0')} 00000 n \n`).join('') + `trailer\n<< /Size ${offsets.length} /Root 1 0 R >>\nstartxref\n${at}\n%%EOF\n`;
   return Buffer.from(data);
 }
+
+export function odt(text = cv, mime = 'application/vnd.oasis.opendocument.text') {
+  const content = `<office:document-content xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:text="urn:oasis:names:tc:opendocument:xmlns:text:1.0"><office:body><office:text>${text.split('\n').map(l => `<text:p>${xml(l)}</text:p>`).join('')}</office:text></office:body></office:document-content>`;
+  return Buffer.from(zipSync({ mimetype: [strToU8(mime), { level: 0 }], 'content.xml': strToU8(content) }));
+}
+
+// Minimal Word 97–2003 OLE fixture, with regular 4 KiB streams and one Unicode text piece.
+export function legacyDoc(text = cv) {
+  const header = Buffer.alloc(512);
+  Buffer.from('d0cf11e0a1b11ae1', 'hex').copy(header);
+  [0x3e, 3, 0xfffe, 9, 6].forEach((n, i) => header.writeUInt16LE(n, 24 + 2 * i));
+  header.writeUInt32LE(1, 44); header.writeInt32LE(1, 48);
+  header.writeUInt32LE(4096, 56); header.writeInt32LE(-2, 60); header.writeInt32LE(-2, 68);
+  header.fill(0xff, 76); header.writeInt32LE(0, 76);
+  const fat = Buffer.alloc(512, 0xff); fat.writeInt32LE(-3, 0); fat.writeInt32LE(-2, 4);
+  for (let i = 2; i < 18; i++) fat.writeInt32LE(i === 9 || i === 17 ? -2 : i + 1, i * 4);
+  const dir = Buffer.alloc(512);
+  const entry = (n, label, type, sector, child, right, size) => {
+    const at = n * 128;
+    dir.write(label, at, 'utf16le'); dir.writeUInt16LE((label.length + 1) * 2, at + 64);
+    dir[at + 66] = type; dir[at + 67] = 1;
+    dir.writeInt32LE(-1, at + 68); dir.writeInt32LE(right, at + 72); dir.writeInt32LE(child, at + 76);
+    dir.writeInt32LE(sector, at + 116); dir.writeUInt32LE(size, at + 120);
+  };
+  entry(0, 'Root Entry', 5, -2, 2, -1, 0);
+  entry(1, 'WordDocument', 2, 2, -1, -1, 4096);
+  entry(2, '0Table', 2, 10, -1, 1, 4096);
+  const word = Buffer.alloc(4096);
+  const body = text.replaceAll('\n', '\r');
+  word.writeUInt16LE(0xa5ec, 0); word.writeUInt16LE(0xc1, 2); word.writeUInt32LE(1024, 0x18);
+  word.writeUInt32LE(body.length, 0x4c); word.write(body, 1024, 'utf16le');
+  const table = Buffer.alloc(4096);
+  table[0] = 2; table.writeUInt32LE(16, 1); table.writeUInt32LE(body.length, 9); table.writeUInt32LE(1024, 15);
+  return Buffer.concat([header, fat, dir, word, table]);
+}

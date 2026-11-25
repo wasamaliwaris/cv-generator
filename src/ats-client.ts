@@ -1,5 +1,11 @@
 export const ATS_LIMIT = 5 * 1024 * 1024;
 export const ATS_DIRECT_LIMIT = 4 * 1024 * 1024;
+export const ATS_FILE_ACCEPT = '.pdf,.docx,.doc,.odt,.rtf,.txt,.md,.markdown,.html,.htm,.png,.jpg,.jpeg,.webp';
+export const atsExtension = (name: string) => name.match(/\.([^.]+)$/)?.[1].toLowerCase() || '';
+export const isAtsImage = (name: string) => ['png', 'jpg', 'jpeg', 'webp'].includes(atsExtension(name));
+export class AtsRequestError extends Error {
+  constructor(message: string, public code?: string) { super(message); }
+}
 const FIRST_PART = 2_621_440;
 export interface AtsCategory { name: string; score: number; max: number }
 export interface AtsReport {
@@ -22,7 +28,7 @@ async function request<T>(action: string, options: RequestInit, signal?: AbortSi
     throw new Error('Could not reach the checker. Check your connection and try again.');
   }
   const data = await response.json().catch(() => null);
-  if (!response.ok || !data) throw new Error(data?.error || (response.status === 413 ? 'That upload is too large. Choose a smaller file.' : 'The checker is temporarily unavailable. Please try again.'));
+  if (!response.ok || !data) throw new AtsRequestError(data?.error || (response.status === 413 ? 'That upload is too large. Choose a smaller file.' : 'The checker is temporarily unavailable. Please try again.'), data?.code);
   return data as T;
 }
 export const atsStatus = (signal?: AbortSignal) => request<AtsAccess>('', {}, signal);
@@ -37,7 +43,7 @@ export async function analyzeUpload(file: File, input: AtsJob, signal: AbortSign
     ({ ticket } = await send<{ ticket: string }>('stage', file.slice(0, FIRST_PART)));
     payload = file.slice(FIRST_PART);
   }
-  const info = new TextEncoder().encode(JSON.stringify({ ...input, ticket }));
+  const info = new TextEncoder().encode(JSON.stringify({ ...input, ticket, extension: atsExtension(file.name) }));
   const length = new ArrayBuffer(4); new DataView(length).setUint32(0, info.length);
   return send<AtsResponse>('analyze', new Blob([length, info, payload]));
 }

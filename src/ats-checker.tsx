@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowDownToLine, ArrowRight, ChartNoAxesCombined, Check, ChevronRight, CircleHelp, ClipboardList, FileCheck2, FileText, LockKeyhole, ScanLine, ShieldCheck, Sparkles, UploadCloud, X } from 'lucide-react';
 import { useAppData } from './app-context';
-import { atsAction, atsStatus, analyzeUpload, ATS_DIRECT_LIMIT, ATS_LIMIT } from './ats-client';
+import { atsAction, atsStatus, analyzeUpload, atsExtension, isAtsImage, AtsRequestError, ATS_DIRECT_LIMIT, ATS_FILE_ACCEPT, ATS_LIMIT } from './ats-client';
 import type { AtsAccess, AtsJob, AtsReport, AtsResponse } from './ats-client';
 import { saveAtsScore } from './ats-storage';
 import { profileToPlainText } from './cv-utils';
@@ -43,21 +43,25 @@ function PrintCV({ text }: { text: string }) {
 }
 
 export function AtsCheckerPage() {
-  usePageMeta({ title: 'ATS Score Checker for PDF and Word CVs — PathCV', description: 'Check how readable your CV is and compare it with a job description. Get a real breakdown and practical next steps.', path: '/ats-checker' });
+  usePageMeta({ title: 'ATS Score Checker for CVs, Documents and Images — PathCV', description: 'Check how readable your CV is and compare it with a job description. Get a real breakdown and practical next steps.', path: '/ats-checker' });
   const { data } = useAppData();
   const [params] = useSearchParams();
   const requested = params.get('cv');
-  const [source, setSource] = useState<'file' | 'saved'>(requested && data.documents.some(d => d.id === requested) ? 'saved' : 'file');
+  const [source, setSource] = useState<'file' | 'saved' | 'paste'>(requested && data.documents.some(d => d.id === requested) ? 'saved' : 'file');
   const [draftId, setDraftId] = useState(requested || '');
   const draft = data.documents.find(d => d.id === draftId);
   const [access, setAccess] = useState(defaultAccess);
   const [checked, setChecked] = useState(false);
   const [file, setFile] = useState<File>();
+  const [pasted, setPasted] = useState('');
+  const [recognizedName, setRecognizedName] = useState('');
+  const [scanOffer, setScanOffer] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [job, setJob] = useState('');
   const [title, setTitle] = useState('');
   const [submitConsent, setSubmitConsent] = useState(false);
   const [busy, setBusy] = useState('');
+  const [recognizing, setRecognizing] = useState(false);
   const [error, setError] = useState('');
   const [workError, setWorkError] = useState('');
   const [notice, setNotice] = useState('');
@@ -90,10 +94,10 @@ export function AtsCheckerPage() {
   }, [printText]);
 
   function chooseFile(found?: File) {
-    setError(''); setFile(undefined);
+    setError(''); setFile(undefined); setScanOffer(false);
     if (fileInput.current) fileInput.current.value = '';
     if (!found) return;
-    if (!/\.(pdf|docx)$/i.test(found.name)) return setError('Select a PDF or a Word document ending in .docx.');
+    if (!ATS_FILE_ACCEPT.split(',').includes(`.${atsExtension(found.name)}`)) return setError('That format is not supported yet. Export the CV as PDF or DOCX, or use Paste CV text.');
     if (!found.size) return setError('The selected file is empty.');
     if (found.size > ATS_LIMIT) return setError('Choose a file no larger than 5 MB.');
     setFile(found);
@@ -112,20 +116,41 @@ export function AtsCheckerPage() {
     e.preventDefault();
     if (busy) return;
     if (!submitConsent) return setError('Confirm private processing before you analyze your CV.');
-    if (source === 'file' && !file) return setError('Choose a PDF or DOCX first.');
+    if (source === 'file' && !file) return setError('Choose a CV file first.');
+    if (source === 'paste' && !pasted.trim()) return setError('Paste your CV text first.');
     if (source === 'saved' && !draft) return setError('Choose a saved CV first.');
+    if (source === 'file' && file && isAtsImage(file.name)) return;
     if (source === 'file' && file && file.size > access.uploadLimit) return setError('Uploads over 4 MB are not enabled here. Compress your CV or export a smaller copy.');
     const ctrl = start('Analyzing your CV…', true);
     const input = { title: title.trim(), job: job.trim() };
     try {
-      const found = source === 'file' && file ? await analyzeUpload(file, input, ctrl.signal) : await atsAction<AtsResponse>('analyze', { ...input, text: draftText(draft!) }, ctrl.signal);
+      const found = source === 'file' && file ? await analyzeUpload(file, input, ctrl.signal) : await atsAction<AtsResponse>('analyze', { ...input, text: source === 'saved' && draft ? draftText(draft) : pasted }, ctrl.signal);
       setResponse(found); setEdit(found.text || ''); setComparison(undefined); setProposal(null); setAiConsent(false); setSaved(false); setSaveError('');
       setAnalyzedInput(input);
       setLinkedSource(source === 'saved' && draft ? { id: draft.id, version: draft.updatedAt } : undefined);
-      setName((source === 'file' ? file?.name.replace(/\.(pdf|docx)$/i, '') : draft?.name)?.slice(0, 75) || 'ATS check');
+      setName((source === 'file' ? file?.name.replace(/\.[^.]+$/, '') : source === 'saved' ? draft?.name : recognizedName || 'Pasted CV')?.slice(0, 75) || 'ATS check');
       focusResult();
-    } catch (err) { if (!ctrl.signal.aborted) setError((err as Error).message); }
-    finally { finish(ctrl); }
+    } catch (err) {
+      if (!ctrl.signal.aborted) {
+        setError((err as Error).message);
+        if (source === 'file' && file && atsExtension(file.name) === 'pdf' && err instanceof AtsRequestError && err.code === 'unreadable_text') setScanOffer(true);
+      }
+    } finally { finish(ctrl); }
+  }
+  async function extractScan() {
+    if (!file || busy) return;
+    const ctrl = start('Loading text recognition…', true);
+    setRecognizing(true);
+    try {
+      const { recognizeCV } = await import('./ats-ocr');
+      const text = await recognizeCV(file, atsExtension(file.name) === 'pdf', ctrl.signal, setBusy);
+      if (ctrl.signal.aborted) return;
+      setPasted(text); setRecognizedName(file.name.replace(/\.[^.]+$/, ''));
+      setSource('paste'); setSubmitConsent(false);
+      requestAnimationFrame(() => document.getElementById('ats-pasted-text')?.focus());
+    } catch (err) {
+      if (!ctrl.signal.aborted) setError(err instanceof Error && !['InvalidStateError', 'EncodingError'].includes(err.name) ? err.message : 'Text recognition failed. Try a clearer image or paste your CV text.');
+    } finally { setRecognizing(false); finish(ctrl); }
   }
   async function doPremium(action: 'recheck' | 'improve' | 'export') {
     if (!response || !edit.trim() || busy) return;
@@ -161,31 +186,34 @@ export function AtsCheckerPage() {
     catch (err) { setSaveError((err as Error).message || 'Could not save this score on this device.'); }
   }
   const report = response?.result;
+  const imageSelected = source === 'file' && !!file && isAtsImage(file.name);
   const canEdit = Boolean(access.premium && response?.text);
   const belongsToChange = response?.text !== undefined && edit.trim() !== response.text.trim();
   return <main className="page-width ats-page">
     <header className="ats-hero"><div className="ats-hero-copy"><div className="eyebrow"><ScanLine size={16} /> PATHCV CAREER TOOLS</div><h1>ATS Score Checker<span>.</span></h1><p>See how clearly your CV reads. Add a job description to check how well your experience matches a specific role.</p><div className="ats-hero-tags"><span><Check size={15} /> Free basic check</span><span><ShieldCheck size={15} /> No account required</span></div></div><div className="ats-hero-decoration" aria-hidden="true"><div><FileCheck2 size={49} strokeWidth={1.35} /></div><span /><span /><i /><i /></div></header>
     <div className="ats-workspace">
       <section className="ats-card ats-input" aria-labelledby="ats-input-heading">
-        <div className="ats-card-title"><span className="ats-icon"><FileText size={19} /></span><div><h2 id="ats-input-heading">Check your CV</h2><p>Upload a file or use a CV saved in this browser.</p></div></div>
+        <div className="ats-card-title"><span className="ats-icon"><FileText size={19} /></span><div><h2 id="ats-input-heading">Check your CV</h2><p>Upload a document or image, paste your CV text, or select a saved CV.</p></div></div>
         <form onSubmit={analyze}>
           <fieldset className="ats-form" disabled={Boolean(busy)}>
             <legend className="sr-only">CV analysis details</legend>
-            {data.documents.length > 0 && <div className="ats-source" aria-label="CV source"><button type="button" aria-pressed={source === 'file'} onClick={() => { setSource('file'); setError(''); }}>Upload file</button><button type="button" aria-pressed={source === 'saved'} onClick={() => { setSource('saved'); setError(''); }}>Use saved CV</button></div>}
+            <div className="ats-source" role="group" aria-label="CV source"><button type="button" aria-pressed={source === 'file'} onClick={() => { setSource('file'); setError(''); }}>Upload file</button><button type="button" aria-pressed={source === 'paste'} onClick={() => { setSource('paste'); setError(''); }}>Paste CV text</button>{data.documents.length > 0 && <button type="button" aria-pressed={source === 'saved'} onClick={() => { setSource('saved'); setError(''); }}>Use saved CV</button>}</div>
             {source === 'file' ? <div className={`ats-upload${dragging ? ' ats-dragging' : ''}`} onDragOver={e => { e.preventDefault(); if (!busy) setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={e => { e.preventDefault(); setDragging(false); if (!busy) chooseFile(e.dataTransfer.files[0]); }}>
-              <input type="file" aria-label="Select a PDF or DOCX" accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" ref={fileInput} className="ats-file-input" onChange={e => chooseFile(e.target.files?.[0])} tabIndex={-1} />
+              <input type="file" aria-label="Select a CV file" accept={ATS_FILE_ACCEPT} ref={fileInput} className="ats-file-input" onChange={e => chooseFile(e.target.files?.[0])} tabIndex={-1} />
               <UploadCloud size={24} aria-hidden="true" />
               {file ? <div className="ats-file-info"><strong>{file.name}</strong><small>{bytes(file.size)}</small><button type="button" aria-label="Remove selected file" onClick={() => chooseFile()}><X size={17} /></button></div> : <><button className="ats-file-button" type="button" onClick={() => fileInput.current?.click()}>Choose a CV file</button><span>or drop it here</span></>}
               {file && <button className="ats-file-button" type="button" onClick={() => fileInput.current?.click()}>Change file</button>}
-              <small>PDF or DOCX · up to {checked && access.uploadLimit < ATS_LIMIT ? '4' : '5'} MB</small>
-            </div> : <><SelectField label="Saved CV" value={draftId} onChange={e => setDraftId(e.target.value)}><option value="">Choose a CV version</option>{data.documents.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}</SelectField><p className="ats-small">The checker uses the saved CV’s text. To check its layout, upload the exported PDF.</p></>}
-            {checked && access.uploadLimit < ATS_LIMIT && source === 'file' && <p className="ats-small">Uploads over 4 MB aren’t enabled on this deployment.</p>}
+              <small>PDF, Word (DOCX/DOC), ODT, RTF, TXT, Markdown, HTML · up to {access.uploadLimit === ATS_LIMIT ? '5' : '4'} MB</small><small>Images: PNG, JPG or WebP · up to 5 MB</small>
+            </div> : source === 'paste' ? <TextAreaField id="ats-pasted-text" label="CV text" rows={9} value={pasted} onChange={e => setPasted(e.target.value)} maxLength={65_000} placeholder="Paste your name, experience, skills and education…" hint={recognizedName ? 'Text was recognized on your device. Check names, dates and headings. The next score will use only the text shown here.' : 'Use separate lines for headings and bullets. The checker will score the text, not the original layout.'} /> : <><SelectField label="Saved CV" value={draftId} onChange={e => setDraftId(e.target.value)}><option value="">Choose a CV version</option>{data.documents.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}</SelectField><p className="ats-small">The checker uses the saved CV’s text. To check its layout, upload the exported PDF.</p></>}
+            {checked && access.uploadLimit < ATS_LIMIT && source === 'file' && !imageSelected && <p className="ats-small">Uploads over 4 MB aren’t enabled on this deployment.</p>}
             <Field label="Job title (optional)" value={title} onChange={e => setTitle(e.target.value)} maxLength={130} placeholder="e.g. Financial Analyst" />
             <TextAreaField label="Paste job description (optional)" rows={5} value={job} onChange={e => setJob(e.target.value)} maxLength={24_000} placeholder="Paste the role’s responsibilities and requirements here…" hint="Leave blank for a general CV check." />
-            <label className="ats-check"><input type="checkbox" checked={submitConsent} onChange={e => setSubmitConsent(e.target.checked)} /><span>I agree to send this CV and any job description to PathCV for this check. Results are not saved unless I choose to save a score.</span></label>
+            {!imageSelected && <label className="ats-check"><input type="checkbox" checked={submitConsent} onChange={e => setSubmitConsent(e.target.checked)} /><span>I agree to send this CV and any job description to PathCV for this check. Results are not saved unless I choose to save a score.</span></label>}
             {error && <InlineNotice tone="error">{error}</InlineNotice>}
-            <Button type="submit" className="ats-submit" disabled={Boolean(busy)}>{busy === 'Analyzing your CV…' ? busy : 'Analyze My CV'}{busy === 'Analyzing your CV…' ? <span className="ats-spinner" aria-hidden="true" /> : <ArrowRight size={17} />}</Button>
+            {source === 'file' && (imageSelected || scanOffer) && <><Button type="button" variant={imageSelected ? 'primary' : 'secondary'} onClick={() => void extractScan()}>Recognize text on this device</Button><p className="ats-small">{imageSelected ? 'The image stays on this device.' : 'English scans up to five pages are supported.'} Review the recognized English text before submitting it for a score.</p></>}
+            {!imageSelected && <Button type="submit" className="ats-submit" disabled={Boolean(busy)}>{busy === 'Analyzing your CV…' ? busy : 'Analyze My CV'}{busy === 'Analyzing your CV…' ? <span className="ats-spinner" aria-hidden="true" /> : <ArrowRight size={17} />}</Button>}
           </fieldset>
+          {recognizing && <p className="ats-input-note"><span role="status">{busy}</span> <Button type="button" variant="secondary" onClick={() => liveRequest.current?.abort()}>Cancel recognition</Button></p>}
           <p className="ats-small ats-input-note"><ShieldCheck size={14} /> Your CV is processed privately. <Link to="/privacy#ats-processing">How processing works</Link></p>
         </form>
       </section>
