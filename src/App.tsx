@@ -6,6 +6,7 @@ import { ErrorBoundary } from './error-boundary';
 import { Footer, SiteHeader, SkipLink } from './ui';
 
 const LandingPage = lazy(() => import('./landing').then((m) => ({ default: m.LandingPage })));
+const AtsCheckerPage = lazy(() => import('./ats-checker').then((m) => ({ default: m.AtsCheckerPage })));
 const BuilderPage = lazy(() => import('./builder').then((m) => ({ default: m.BuilderPage })));
 const ExpressPage = lazy(() => import('./express').then((m) => ({ default: m.ExpressPage })));
 const CoverLetterPage = lazy(() => import('./cover-letter').then((m) => ({ default: m.CoverLetterPage })));
@@ -39,6 +40,7 @@ function AppShell() {
   return <div className="app-shell"><SkipLink /><SiteHeader /><ErrorBoundary key={pathname}><ScrollToTop /><Suspense fallback={<RouteLoading />}><Routes>
     <Route path="/" element={<LandingPage />} />
     <Route path="/ai-cv" element={<Navigate to="/builder" replace />} />
+    <Route path="/ats-checker" element={<AtsCheckerPage />} />
     <Route path="/builder" element={<BuilderPage />} />
     <Route path="/express" element={<ExpressPage />} />
     <Route path="/templates" element={<TemplatesPage />} />

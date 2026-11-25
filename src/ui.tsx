@@ -36,6 +36,7 @@ export function SiteHeader() {
           <NavLink to="/#how-it-works" end onClick={close}>{message('nav').howItWorks}</NavLink>
           <NavLink to="/templates" onClick={close}>{message('nav').templates}</NavLink>
           <NavLink to="/resources" onClick={close}>Resources</NavLink>
+          <NavLink to="/ats-checker" onClick={close}>ATS Score Checker</NavLink>
           <NavLink to="/my-cvs" onClick={close}>My CVs</NavLink>
           <NavLink to="/help" onClick={close}>{message('nav').help}</NavLink>
           <NavLink to="/about" onClick={close}>About</NavLink>
@@ -67,13 +68,13 @@ export function Footer() {
       <div className="page-width footer-inner">
         <div className="footer-brand">
           <Link to="/" className="brand"><span className="brand-mark" aria-hidden="true">P</span><span>Path<span className="brand-light">CV</span></span></Link>
-          <p>Make your next step your own. Free forever — your data never leaves this device.</p>
+          <p>Make your next step your own. Build for free and keep your drafts on this device.</p>
           <div className="footer-badges"><span className="footer-badge">No signup</span><span className="footer-badge">No watermark</span><span className="footer-badge">Free PDF</span></div>
           <SocialLinks className="footer-social" />
         </div>
         <nav className="footer-grid" aria-label="Footer navigation">
           <div className="footer-col"><strong>Build</strong><Link to="/builder">CV builder</Link><Link to="/express">Express mode</Link><Link to="/templates">{message('nav').templates}</Link><Link to="/cover-letter">{message('footer').coverLetter}</Link></div>
-          <div className="footer-col"><strong>Workspace</strong><Link to="/my-cvs">{message('footer').savedCvs}</Link><Link to="/profile">{message('footer').profile}</Link><Link to="/help">Export &amp; backup</Link></div>
+          <div className="footer-col"><strong>Workspace</strong><Link to="/ats-checker">ATS Score Checker</Link><Link to="/my-cvs">{message('footer').savedCvs}</Link><Link to="/profile">{message('footer').profile}</Link><Link to="/help">Export &amp; backup</Link></div>
           <div className="footer-col"><strong>Resources</strong><Link to="/#how-it-works">{message('nav').howItWorks}</Link><Link to="/resources">Guides &amp; articles</Link><Link to="/help">{message('nav').help}</Link><Link to="/privacy">{message('footer').privacy}</Link></div>
           <div className="footer-col"><strong>Company</strong><Link to="/about">About us</Link><Link to="/contact">Contact</Link><Link to="/terms">Terms of use</Link></div>
         </nav>
@@ -205,18 +206,18 @@ export function SkipLink() {
   return <a href="#main-content" className="skip-link" onClick={jump}>Skip to content</a>;
 }
 
-export function ScoreRing({ score, size = 44 }: { score: number; size?: number }) {
+export function ScoreRing({ score, size = 44, label = 'CV completeness', suffix = '' }: { score: number; size?: number; label?: string; suffix?: string }) {
   const radius = (size - 8) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (Math.min(100, Math.max(0, score)) / 100) * circumference;
   const tone = score >= 70 ? 'good' : score >= 40 ? 'ok' : 'low';
   return (
-    <span className={`score-ring score-${tone}`} style={{ width: size, height: size }} role="img" aria-label={`CV completeness ${score} percent`}>
+    <span className={`score-ring score-${tone}`} style={{ width: size, height: size }} role="img" aria-label={`${label} ${score} percent`}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
         <circle cx={size / 2} cy={size / 2} r={radius} className="score-track" />
         <circle cx={size / 2} cy={size / 2} r={radius} className="score-fill" strokeDasharray={circumference} strokeDashoffset={offset} />
       </svg>
-      <strong>{score}</strong>
+      <strong>{score}{suffix}</strong>
     </span>
   );
 }
